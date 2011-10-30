@@ -53,6 +53,9 @@ http://github.com/TroZ/DF2MC
 #include <dfhack/modules/Maps.h>
 #include <dfhack/Modules/Materials.h>
 #include <dfhack/modules/Constructions.h>
+#include <dfhack\modules\Buildings.h>
+#include <dfhack\VersionInfo.h>
+#include <dfhack\modules\Gui.h>
 
 #include <io.h>
 #include <direct.h>
@@ -2221,7 +2224,7 @@ void getConsMats ( DFHack::Materials * Mats, std::string * mat, std::string * co
 
 void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vector <uint16_t> > layerassign,
 	vector<DFHack::t_feature> global_features, std::map <DFHack::planecoord, std::vector<DFHack::t_feature *> > local_features,
-	map<uint32_t,myConstruction> Constructions, map<uint32_t,myBuilding> Buildings, map<uint32_t,char*> vegs,
+	map<uint32_t,myConstruction> Constructions, map<uint32_t,myBuilding> Buildings, map<uint32_t,std::string> vegs,
 	TiXmlElement *uio, uint8_t* mclayers, uint8_t* mcdata,
 	uint32_t dfblockx, uint32_t dfblocky, uint32_t zzz, uint32_t zcount,
 	uint32_t xoffset, uint32_t yoffset, int mcxsquares, int mcysquares )
@@ -2355,7 +2358,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
 
 
 			char classname[128];
-			char* plant = NULL;
+			std::string plant;
 			classname[0]='\0';
 			int variant = tileTypeTable[tiletype].variant;
 			uint8_t* object = NULL;
@@ -2368,7 +2371,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
 			case SHRUB_DEAD:
 			case SHRUB_OK:
 				{
-					map<uint32_t,char*>::iterator vit;
+					map<uint32_t,std::string>::iterator vit;
 					vit = vegs.find ( getMapIndex ( dfx,dfy,zzz ) );
 					if ( vit!=vegs.end() )
 					{
@@ -2582,7 +2585,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
 	}
 }
 
-int convertMaps ( DFHack::Context *DF,DFHack::Materials * Mats )
+int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 {
 
 	DFConsole->print ( "\nCalculating size limit...\n" );
@@ -2825,20 +2828,20 @@ int convertMaps ( DFHack::Context *DF,DFHack::Materials * Mats )
 
 	if ( !Maps->ReadGlobalFeatures ( global_features ) )
 	{
-		cerr << "Can't get global features." << endl;
+		DFConsole->printerr ("Can't get global features.\n");
 		return 104;
 	}
 
 	if ( !Maps->ReadLocalFeatures ( local_features ) )
 	{
-		cerr << "Can't get local features." << endl;
+		DFConsole->printerr ("Can't get local features.\n");
 		return 105;
 	}
 
 	// get region geology
 	if ( !Maps->ReadGeology ( layerassign ) )
 	{
-		cerr << "Can't get region geology." << endl;
+		DFConsole->printerr ("Can't get region geology.\n");
 		return 106;
 	}
 
@@ -2846,13 +2849,14 @@ int convertMaps ( DFHack::Context *DF,DFHack::Materials * Mats )
 	DFConsole->print ( "\nReading Plants... " );
 	DFHack::Vegetation * v = DF->getVegetation();
 	uint32_t numVegs = 0;
-	v->Start ( numVegs );
+	v->Start ();
+
 	//read vegetation into a map for faster access later
-	map<uint32_t,char*> vegs;
-	for ( uint32_t i =0; i < numVegs; i++ )
+	map<uint32_t,std::string> vegs;
+	for ( uint32_t i =0; i < v->all_plants->size(); i++ )
 	{
-		DFHack::t_tree tree;
-		v->Read ( i,tree );
+		DFHack::df_plant tree;
+		tree = *(v->all_plants->at(i));
 
 		vegs[getMapIndex ( tree.x,tree.y,tree.z ) ] = Mats->organic[tree.material].id;
 	}
@@ -2864,11 +2868,11 @@ int convertMaps ( DFHack::Context *DF,DFHack::Materials * Mats )
 	DFHack::Buildings * Bld = DF->getBuildings();
 	map <uint32_t, string> custom_workshop_types;
 	uint32_t numBuildings;
-	DFHack::VersionInfo * mem = DF->getMemoryInfo();
+	DFHack::VersionInfo * mem = DF->vinfo;
 	//DFHack::Position * Pos = DF->getPosition();
 
 	map<uint32_t,myBuilding> Buildings;
-
+	
 	if ( Bld->Start ( numBuildings ) )
 	{
 		Bld->ReadCustomWorkshopTypes ( custom_workshop_types );
@@ -3037,7 +3041,7 @@ int convertMaps ( DFHack::Context *DF,DFHack::Materials * Mats )
 			for ( uint32_t dfblocky = yoffset; dfblocky< y_max;dfblocky++ )
 			{
 
-				if ( Maps->isValidBlock ( dfblockx,dfblocky,zzz ) )
+				if ( Maps->getBlock ( dfblockx,dfblocky,zzz ) )
 				{
 
 					convertDFBlock ( Maps, Mats, layerassign, global_features, local_features,
@@ -3102,9 +3106,9 @@ int convertMaps ( DFHack::Context *DF,DFHack::Materials * Mats )
 
 	//place the spawn at DF cursor location, if within output area and not a wall
 	DFConsole->print ( "\nPlancing spawn location\n" );
-	DFHack::Position *Pos = DF->getPosition();
+	DFHack::Gui *gui = DF->getGui();
 	int32_t cx, cy, cz,ocx,ocy,ocz;
-	Pos->getCursorCoords ( ocx,ocy,ocz );
+	gui->getCursorCoords ( ocx,ocy,ocz );
 	cx=ocx;
 	cy=ocy;
 	cz=ocz;
@@ -3290,24 +3294,44 @@ cin.ignore();
 */
 
 
-int main ( int argc, const char* argv[] )
-{
 
+DFhackCExport command_result mc_export (Core * c, vector <string> & parameters);
+
+DFhackCExport const char * plugin_name ( void )
+{
+    return "df2minecraft";
+}
+
+DFhackCExport command_result plugin_init ( Core * c, std::vector <PluginCommand> &commands)
+{
+    commands.clear();
+    commands.push_back(PluginCommand("df2minecraft", "Print the weather map or change weather.",mc_export));
+    return CR_OK;
+}
+
+DFhackCExport command_result plugin_shutdown ( Core * c )
+{
+    return CR_OK;
+}
+
+DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
+{
+	DFConsole = &(c->con);
 	//load settings xml
 	TiXmlDocument doc ( "settings.xml" );
 	bool loadOkay = doc.LoadFile();
 	if ( !loadOkay )
 	{
-		DFConsole->print ( "Could not load SETTINGS.XML\n" );
-		return 1;
+		DFConsole->printerr ( "Could not load SETTINGS.XML\n" );
+		return CR_FAILURE;
 	}
 
 	//load basic settings
 	settings = doc.FirstChildElement ( "settings" );
 	if ( settings==NULL )
 	{
-		DFConsole->print ( "Could not load settings from SETTINGS.XML (corrupt xml file?)\n" );
-		return 2;
+		DFConsole->printerr ( "Could not load settings from SETTINGS.XML (corrupt xml file?)\n" );
+		return CR_FAILURE;
 	}
 	squaresize=3;
 	if ( settings->FirstChildElement ( "squaresize" ) ==NULL )
@@ -3319,9 +3343,10 @@ int main ( int argc, const char* argv[] )
 	const char* res = settings->FirstChildElement ( "squaresize" )->Attribute ( "val",&squaresize );
 	if ( res==NULL || squaresize<1 || squaresize>10 )
 	{
-		DFConsole->print ( "Invalid square size setting\n" );
-		return 3;
+		DFConsole->printerr ( "Invalid square size setting\n" );
+		return CR_FAILURE;
 	}
+
 
 	if ( settings->FirstChildElement ( "torchinsidepercent" ) ==NULL )
 	{
@@ -3414,7 +3439,6 @@ int main ( int argc, const char* argv[] )
 		settings->FirstChildElement ( "safesand" )->SetAttribute ( "val","3" );
 	}
 
-
 	int temp;
 	if ( outputtype!=OUTPUT_ALPHA )
 	{
@@ -3445,7 +3469,6 @@ int main ( int argc, const char* argv[] )
 		limitxmax=2000;
 		limitymax=2000;
 	}
-
 	if ( settings->FirstChildElement ( "verticalarea" ) !=NULL )
 	{
 		const char *str;
@@ -3494,12 +3517,11 @@ int main ( int argc, const char* argv[] )
 		limitlevels = 127/squaresize;
 	}
 
-
-
 	//load MC material mappings
 	mcMats.clear();
 	//  dfMat2mcMat.clear();
 	loadMcMats ( &doc );
+
 
 	//load objects
 	xmlmaterials = doc.FirstChildElement ( "dwarffortressmaterials" );
@@ -3545,49 +3567,16 @@ int main ( int argc, const char* argv[] )
 
 	loadDFObjects();
 
-	//test
-	//int result = testLevel();
-	//return result;
-
-	//setup DFHHack
-	DFHack::ContextManager DFMgr ( "Memory.xml" );
-	DFHack::Context *DF;
-	try
-	{
-		DF = DFMgr.getSingleContext();
-		DF->Attach();
-	}
-	catch ( exception& e )
-	{
-		cerr << e.what() << endl;
-#ifndef LINUX_BUILD
-		cin.ignore();
-#endif
-		return 100;
-	}
-
-	DFHack::Materials * Mats = DF->getMaterials();
+	DFHack::Materials * Mats = c->getMaterials();
 	Mats->ReadAllMaterials();
 
-
-
 	//convert the map
-	int result = convertMaps ( DF,Mats );
-
-
-
-	if ( !DF->Detach() )
-	{
-		cerr << "Can't detach from DF" << endl;
-	}
+	int result = convertMaps ( c,Mats );
 
 	doc.SaveFile ( "updated.xml" );
 
-#ifndef LINUX_BUILD
-	DFConsole->print ( "\nPress enter key" );
-	cin.ignore();
-#endif
-	return result;
+	if(result)
+		return CR_FAILURE;
+	else
+		return CR_OK;
 }
-
-
