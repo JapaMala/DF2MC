@@ -1455,7 +1455,7 @@ uint8_t* getMaterial ( TiXmlElement *uio,int x, int y, int z,const  char* basicm
         }
         else
         {
-            //not even a basic object found - create a basic object for settings.xml
+            //not even a basic object found - create a basic object for hack/df2mc.xml
             if ( addstats )
             {
                 DFConsole->print ( "location %d,%d,%d is %s\tNOT FOUND!\tcreating %s as air\n",x,y,z,best,loc[0] );
@@ -2478,7 +2478,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         {
             uio = new TiXmlElement ( "unimplemented_objects" );
             doc->LinkEndChild ( uio );
-            TiXmlComment *comment = new TiXmlComment ( "These elements are the most specific elements that make up the maps that you have converted\nIf something doesn't look right in the converted map, try to fix the object here,\nspecify how it should look in Minecraft, and copy that object into the settings.xml file" );
+            TiXmlComment *comment = new TiXmlComment ( "These elements are the most specific elements that make up the maps that you have converted\nIf something doesn't look right in the converted map, try to fix the object here,\nspecify how it should look in Minecraft, and copy that object into the hack/df2mc.xml file" );
             uio->LinkEndChild ( comment );
         }
     }
@@ -3149,11 +3149,11 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
 {
     DFConsole = &(c->con);
     //load settings xml
-    TiXmlDocument doc ( "settings.xml" );
+    TiXmlDocument doc ( "hack/df2mc.xml" );
     bool loadOkay = doc.LoadFile();
     if ( !loadOkay )
     {
-        DFConsole->printerr ( "Could not load SETTINGS.XML\n" );
+        DFConsole->printerr ( "Could not load hack/df2mc.xml\n" );
         return CR_FAILURE;
     }
 
@@ -3161,7 +3161,7 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
     settings = doc.FirstChildElement ( "settings" );
     if ( settings==NULL )
     {
-        DFConsole->printerr ( "Could not load settings from SETTINGS.XML (corrupt xml file?)\n" );
+        DFConsole->printerr ( "Could not load settings from hack/df2mc.xml (corrupt xml file?)\n" );
         return CR_FAILURE;
     }
     squaresize=3;
