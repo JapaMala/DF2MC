@@ -102,7 +102,7 @@ http://github.com/TroZ/DF2MC
         return szT;
     }
 #else
-    int make_dir (const char * path, int mode)
+    int make_dir (const char * path, int mode = 0)
     {
         return mkdir(path);
     }
@@ -731,7 +731,7 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
     path[1023]='\0';
     if ( access ( path,0 ) !=0 )
     {
-        if ( mkdir ( path ) !=0 )
+        if ( make_dir ( path ) !=0 )
             return -100;
     }
     int mod = ypos%64;
@@ -742,7 +742,7 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
     path[1023]='\0';
     if ( access ( path,0 ) !=0 )
     {
-        if ( mkdir ( path ) !=0 )
+        if ( make_dir ( path ) !=0 )
             return -101;
     }
 
@@ -950,7 +950,7 @@ int saveMCLevelAlpha ( uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uin
     if ( count>9999 )
         return count;
 
-    if ( mkdir ( dirname ) !=0 )
+    if ( make_dir ( dirname ) !=0 )
     {
         return -1;
     }
