@@ -140,11 +140,12 @@ TiXmlElement *xmlplants;
 TiXmlElement *xmlbuildings;
 TiXmlElement *xmlflows;
 
-const char TileClassNames[18][16] =
+const char TileClassNames[23][16] =
 {
     "empty",
     "wall",
     "pillar",
+    "brook_bed",
     "forticication",
     "stairup",
     "stairdown",
@@ -152,6 +153,9 @@ const char TileClassNames[18][16] =
     "ramp",
     "ramptop",
     "floor",
+    "brook_top",
+    "river_bed",
+    "pool",
     "treedead",
     "tree",
     "saplingdead",
@@ -159,7 +163,8 @@ const char TileClassNames[18][16] =
     "shrubdead",
     "shrub",
     "boulder",
-    "pebbles"
+    "pebbles",
+    "endless_pit"
 };
 const char TileMaterialNames[19][16]=
 {
