@@ -130,6 +130,7 @@ int cubeSkyOpacity[256];//how much light each block absorbes from the sky
 int cubeBlockOpacity[256];//how much light each block absorbes from the block sources
 int cubePartialLit[256];//if the block is partially light - mostly 1/2 step and stais blocks, that are lit themselves but block light from passing through
 
+#define CHUNK_HEIGHT 128
 
 TiXmlElement *settings;
 TiXmlElement *materialmapping;
@@ -790,15 +791,15 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
 
 
     //prepair data
-    char blocks[16*16*128];
-    char data[16*16*64];
-    char skylight[16*16*64];
-    char blocklight[16*16*64];
+    char blocks[16*16*CHUNK_HEIGHT];
+    char data[16*16*CHUNK_HEIGHT/2];
+    char skylight[16*16*CHUNK_HEIGHT/2];
+    char blocklight[16*16*CHUNK_HEIGHT/2];
     char heightmap[16*16];
-    memset ( blocks,0,16*16*128 );
-    memset ( data,0,16*16*64 );
-    memset ( skylight,0,16*16*64 );
-    memset ( blocklight,0,16*16*64 );
+    memset ( blocks,0,16*16*CHUNK_HEIGHT );
+    memset ( data,0,16*16*CHUNK_HEIGHT/2 );
+    memset ( skylight,0,16*16*CHUNK_HEIGHT/2 );
+    memset ( blocklight,0,16*16*CHUNK_HEIGHT/2 );
     memset ( heightmap,0,16*16 );
 
     for ( int zz=0;zz<mczsquares;zz++ )
@@ -817,13 +818,13 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
                 int skyl = mcskylight[idx];
                 int blockl = mcblocklight[idx];
 
-                int index = zz + ( yy * 128 + ( xx * 128 * 16 ) ) ;
-                assert ( index< ( 16 * 16 * 128 ) );
+                int index = zz + ( yy * CHUNK_HEIGHT + ( xx * CHUNK_HEIGHT * 16 ) ) ;
+                assert ( index< ( 16 * 16 * CHUNK_HEIGHT ) );
 
                 blocks[index] = blocktype;
 
                 if ( blocktype!=0 )
-                    heightmap[yy*16 + xx] = min ( zz+1,127 );
+                    heightmap[yy*16 + xx] = min ( zz+1,CHUNK_HEIGHT-1 );
 
                 if ( zz%2==0 )
                 {
@@ -843,7 +844,7 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
 
     //blocks
     write ( of,"\007\000\006Blocks",9 );
-    int isize = 16 * 16 * 128;
+    int isize = 16 * 16 * CHUNK_HEIGHT;
     val[0] = * ( ( ( char* ) ( &isize ) ) +3 );
     val[1] = * ( ( ( char* ) ( &isize ) ) +2 );
     val[2] = * ( ( ( char* ) ( &isize ) ) +1 );
@@ -853,7 +854,7 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
     write ( of, ( char* ) blocks,isize );
     //data
     write ( of,"\007\000\004Data",7 );
-    isize = 16 * 16 * 64;
+    isize = 16 * 16 * CHUNK_HEIGHT/2;
     val[0] = * ( ( ( char* ) ( &isize ) ) +3 );
     val[1] = * ( ( ( char* ) ( &isize ) ) +2 );
     val[2] = * ( ( ( char* ) ( &isize ) ) +1 );
@@ -1945,7 +1946,7 @@ int getBuildingDir ( DFHack::Maps *Maps,map<uint32_t,myBuilding> Buildings,DFHac
     }
 }
 
-int findLevels ( DFHack::Maps *Maps,int xmin,int xmax,int ymin,int ymax,int zmax,int typeToFind )
+int findLevels ( DFHack::Maps *Maps,int xmin,int xmax,int ymin,int ymax,int zmax,uint32_t typeToFind )
 {
 
     DFHack::mapblock40d Block;
@@ -2580,8 +2581,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     {
 
         //keep 'interesting' levels and airtokeep air levels
-        findLevels ( Maps,xoffset,x_max,yoffset,y_max,z_max, ( 1<<FLOOR ) + ( 1<<PILLAR ) +
-                     ( 1<<FORTIFICATION ) + ( 1<<RAMP ) + ( 1<<RAMP_TOP ) );
+        findLevels ( Maps,xoffset,x_max,yoffset,y_max,z_max, ( 1<<FLOOR ) + ( 1<<PILLAR ) + ( 1<<FORTIFICATION ) + ( 1<<RAMP ) + (1<<RAMP_TOP ) + (1<<RIVER_BED) );
 
         //ok, interesting levels are marked, mark the airtokeep levels above the top most interesting level
         uint32_t top = z_max;
@@ -3309,9 +3309,9 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
         }
     }
 
-    if ( ( limitlevels*squaresize ) > 127 )
+    if ( ( limitlevels*squaresize ) > (CHUNK_HEIGHT-1) )
     {
-        limitlevels = 127/squaresize;
+        limitlevels = (CHUNK_HEIGHT-1)/squaresize;
     }
 
     //load MC material mappings
