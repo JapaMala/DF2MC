@@ -618,14 +618,14 @@ int compressFile ( char* src, char* dest )
     FILE *s = fopen ( "out.mcraw","rb" );
     if ( s==NULL )
     {
-        DFConsole->print ( "Could not open file for reading, exiting." );
+        DFConsole->printerr ( "Could not open file for reading, exiting." );
         return -50;
     }
 
     FILE *f = fopen ( dest,"wb" );
     if ( f==NULL )
     {
-        DFConsole->print ( "Could not open file for writing, exiting." );
+        DFConsole->printerr ( "Could not open file for writing, exiting." );
         return -51;
     }
 
@@ -638,7 +638,7 @@ int compressFile ( char* src, char* dest )
     ret = deflateInit2 ( &strm, Z_BEST_COMPRESSION,Z_DEFLATED,31,9,Z_DEFAULT_STRATEGY );//the 31 indicates gzip, set to 15 for normal zlib file header
     if ( ret != Z_OK )
     {
-        DFConsole->print ( "Unable to initalize compression routine, exiting." );
+        DFConsole->printerr ( "Unable to initalize compression routine, exiting." );
         return ret;
     }
 
@@ -901,7 +901,7 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
     int res = compressFile ( "out.mcraw",path );
     if ( res != Z_OK )
     {
-        DFConsole->print ( "\nError compressing file (%d)\n",res );
+        DFConsole->printerr ( "\nError compressing file (%d)\n",res );
     }
     else
     {
@@ -914,7 +914,7 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
         }
         else
         {
-            DFConsole->print ( " Error getting file size " );
+            DFConsole->printerr ( " Error getting file size " );
         }
     }
 
@@ -1138,7 +1138,7 @@ int saveMCLevelAlpha ( uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uin
     int res = compressFile ( "out.mcraw",filename );
     if ( res != Z_OK )
     {
-        DFConsole->print ( "\nError compressing file (%d)\n",res );
+        DFConsole->printerr ( "\nError compressing file (%d)\n",res );
     }
     else
     {
@@ -2378,7 +2378,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 }
                 else
                 {
-                    DFConsole->print ( "Cant find building that should already be defined!\n" );
+                    DFConsole->printerr ( "Cant find building that should already be defined!\n" );
                 }
             }
 
@@ -2477,7 +2477,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     TiXmlElement *uio = NULL;
     if ( createUnknown )
     {
-        TiXmlDocument *doc = new TiXmlDocument ( "unimplementedobjects.xml" );
+        TiXmlDocument *doc = new TiXmlDocument ( "hack/unimplementedobjects.xml" );
         bool loadOkay = doc->LoadFile();
         uio=doc->FirstChildElement ( "unimplemented_objects" );
         if ( uio==NULL )
@@ -2512,7 +2512,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     if ( xoffset>x_max || yoffset>y_max )
     {
-        DFConsole->print ( "Invalid level size.\n" );
+        DFConsole->printerr ( "Invalid level size.\n" );
         return 21;
     }
 
@@ -2682,7 +2682,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     if ( mcxsquares<0 || mcysquares<0 || mczsquares<0 )
     {
-        DFConsole->print ( "Area too small\n" );
+        DFConsole->printerr ( "Area too small\n" );
         return 20;
     }
 
@@ -2876,7 +2876,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     uint8_t* mcblocklight = new uint8_t[mcxsquares*mcysquares*mczsquares];
     if ( mclayers==NULL || mcdata == NULL || mcskylight == NULL || mcblocklight == NULL )
     {
-        DFConsole->print ( "Unable to allocate memory to store level data, exiting." );
+        DFConsole->printerr ( "Unable to allocate memory to store level data, exiting." );
         return 10;
     }
     memset ( mclayers,0,sizeof ( uint8_t ) * ( mcxsquares*mcysquares*mczsquares ) );
@@ -3370,7 +3370,7 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
     //convert the map
     int result = convertMaps ( c,Mats );
 
-    doc.SaveFile ( "updated.xml" );
+    doc.SaveFile ( "hack/updated.xml" );
 
     if (result)
         return CR_FAILURE;
