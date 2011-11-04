@@ -2272,19 +2272,19 @@ Each object also has a list of numbers, the same squaresize^3 in size, that repr
 	<floodgate.-6 mat="air,lever,air;iron door,-1,iron door;air,lever,air|air,air,air;iron door,-1,iron door;air,air,air|air,air,air;air,air,air;air,air,air" data="0,2,0;8,0,10;0,1,0|0,0,0;0,0,2;0,0,0|0,0,0;0,0,0;0,0,0" />
 
 
-    <bed mat="log,log,log;air,air,air;air,air,air|log,log,log;cloth,cloth,cloth;cloth,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-2 mat="log,log,log;air,air,air;air,air,air|log,log,log;cloth,cloth,cloth;cloth,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-4 mat="log,air,air;log,air,air;log,air,air|log,cloth,cloth;log,cloth,cloth;log,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-6 mat="air,air,log;air,air,log;air,air,log|cloth,cloth,log;cloth,cloth,log;cloth,cloth,log|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-8 mat="air,air,air;air,air,air;log,log,log|cloth,cloth,cloth;cloth,cloth,cloth;log,log,log|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-246 mat="log,log,log;air,air,air;air,air,air|log,log,log;cloth,cloth,cloth;cloth,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-248 mat="log,air,air;log,air,air;log,air,air|log,cloth,cloth;log,cloth,cloth;log,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-268 mat="air,air,log;air,air,log;air,air,log|cloth,cloth,log;cloth,cloth,log;cloth,cloth,log|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-468 mat="air,air,air;air,air,air;log,log,log|cloth,cloth,cloth;cloth,cloth,cloth;log,log,log|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-24 mat="log,log,log;air,air,air;air,air,air|log,log,log;cloth,cloth,cloth;cloth,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-26 mat="log,log,log;air,air,air;air,air,air|log,log,log;cloth,cloth,cloth;cloth,cloth,cloth|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-48 mat="air,air,air;air,air,air;log,log,log|cloth,cloth,cloth;cloth,cloth,cloth;log,log,log|air,air,air;air,air,air;air,air,air" data="" />
-	<bed.-68 mat="air,air,air;air,air,air;log,log,log|cloth,cloth,cloth;cloth,cloth,cloth;log,log,log|air,air,air;air,air,air;air,air,air" data="" />
+    <bed mat="torch,air,torch;air,air,air;air,air,air|bookshelf,bed,bookshelf;air,bed,air;air,air,air|air,air,air;air,air,air;air,air,air" 		data="5,0,5;0,0,0;0,0,0|0,9,0;0,1,0;0,0,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-2 mat="torch,air,torch;air,air,air;air,air,air|bookshelf,bed,bookshelf;air,bed,air;air,air,air|air,air,air;air,air,air;air,air,air" 	data="5,0,5;0,0,0;0,0,0|0,9,0;0,1,0;0,0,0|0,0,0;0,0,0;0,0,0"  />
+	<bed.-4 mat="torch,air,air;air,air,air;torch,air,air|bookshelf,air,air;bed,bed,air;bookshelf,air,air|air,air,air;air,air,air;air,air,air" 	data="5,0,0;0,0,0;5,0,0|0,0,0;8,0,0;0,0,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-6 mat="air,air,torch;air,air,air;air,air,torch|air,air,bookshelf;air,bed,bed;air,air,bookshelf|air,air,air;air,air,air;air,air,air" 	data="0,0,5;0,0,0;0,0,5|0,0,0;0,2,10;0,0,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-8 mat="air,air,air;air,air,air;torch,air,torch|air,air,air;air,bed,air;bookshelf,bed,bookshelf|air,air,air;air,air,air;air,air,air" 	data="0,0,0;0,0,0;5,0,5|0,0,0;0,3,0;0,11,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-246 mat="torch,air,torch;air,air,air;air,air,air|bookshelf,bed,bookshelf;air,bed,air;air,air,air|air,air,air;air,air,air;air,air,air" data="5,0,5;0,0,0;0,0,0|0,9,0;0,1,0;0,0,0|0,0,0;0,0,0;0,0,0"  />
+	<bed.-248 mat="torch,air,air;air,air,air;torch,air,air|bookshelf,air,air;bed,bed,air;bookshelf,air,air|air,air,air;air,air,air;air,air,air" data="5,0,0;0,0,0;5,0,0|0,0,0;8,0,0;0,0,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-268 mat="air,air,torch;air,air,air;air,air,torch|air,air,bookshelf;air,bed,bed;air,air,bookshelf|air,air,air;air,air,air;air,air,air" data="0,0,5;0,0,0;0,0,5|0,0,0;0,2,10;0,0,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-468 mat="air,air,air;air,air,air;torch,air,torch|air,air,air;air,bed,air;bookshelf,bed,bookshelf|air,air,air;air,air,air;air,air,air" data="0,0,0;0,0,0;5,0,5|0,0,0;0,3,0;0,11,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-24 mat="torch,air,torch;air,air,air;air,air,air|bookshelf,bed,bookshelf;air,bed,air;air,air,air|air,air,air;air,air,air;air,air,air" 	data="5,0,5;0,0,0;0,0,0|0,9,0;0,1,0;0,0,0|0,0,0;0,0,0;0,0,0"  />
+	<bed.-26 mat="torch,air,torch;air,air,air;air,air,air|bookshelf,bed,bookshelf;air,bed,air;air,air,air|air,air,air;air,air,air;air,air,air" 	data="5,0,5;0,0,0;0,0,0|0,9,0;0,1,0;0,0,0|0,0,0;0,0,0;0,0,0"  />
+	<bed.-48 mat="air,air,air;air,air,air;torch,air,torch|air,air,air;air,bed,air;bookshelf,bed,bookshelf|air,air,air;air,air,air;air,air,air" 	data="0,0,0;0,0,0;5,0,5|0,0,0;0,3,0;0,11,0|0,0,0;0,0,0;0,0,0" />
+	<bed.-68 mat="air,air,air;air,air,air;torch,air,torch|air,air,air;air,bed,air;bookshelf,bed,bookshelf|air,air,air;air,air,air;air,air,air" 	data="0,0,0;0,0,0;5,0,5|0,0,0;0,3,0;0,11,0|0,0,0;0,0,0;0,0,0" />
 
     <!--<bars_vertical mat="air,air,air;air,iron block,air;air,air,air|iron block,air,iron block;air,air,air;iron block,air,iron block|air,air,air;air,air,air;air,air,air" data="" />-->
     <bars_vertical mat="air,fence,air;fence,fence,fence;air,fence,air|air,fence,air;fence,fence,fence;air,fence,air|air,fence,air;fence,fence,fence;air,fence,air" data="" />
