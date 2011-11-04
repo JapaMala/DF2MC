@@ -2175,7 +2175,7 @@ Each object also has a list of numbers, the same squaresize^3 in size, that repr
     <quern mat="step,dstep,step;dstep,-1,dstep;step,dstep,step|step,step,step;step,workbench,step;step,step,step|air,air,air;air,air,air;air,air,air" data="" />
     <grate_floor mat="air,air,air;air,air,air;air,air,air|air,air,air;air,air,air;air,air,air|air,-1,air;-1,-1,-1;air,-1,air" data="" />
     <bars_floor mat="air,air,air;air,air,air;air,air,air|air,air,air;air,air,air;air,air,air|iron block,air,iron block;air,iron block,air;iron block,air,iron block" data="" />
-    <hatch mat="air,air,air;air,air,air;air,air,air|air,air,air;air,air,air;air,air,air|step,step,step;step,step,dstep;step,step,step" data="" />
+    <hatch mat="air,air,air;air,air,air;air,air,air|air,air,air;air,air,air;air,air,air|trapdoor,trapdoor,trapdoor;trapdoor,-1,trapdoor;trapdoor,trapdoor,trapdoor" data="0,0,0;0,0,0;0,0,0|0,0,0;0,0,0;0,0,0|3,2,1;1,0,0;0,3,2" />
     <support mat="air,air,air;air,-1,air;air,air,air|air,air,air;air,-1,air;air,air,air|air,air,air;air,-1,air;air,air,air" data="" />
     <traction_bench mat="step,air,step;air,air,air;step,air,step|-1,-1,-1;-1,-1,-1;-1,-1,-1|air,air,air;air,air,air;air,air,air" data="" />
     <coffin mat="air,step,air;air,step,air;air,step,air|-1,-1,-1;-1,air,-1;-1,-1,-1|air,air,air;air,air,air;air,air,air" data="" />
