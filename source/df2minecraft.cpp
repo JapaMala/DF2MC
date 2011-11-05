@@ -1998,27 +1998,27 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
     consmat="unknown";
     if ( type == 0 )
     {
-        if ( idx != 0xffffffff && idx<Mats->inorganic.size() )
-            consmat = Mats->inorganic[idx].id;
+        if ( idx != 0xffffffff && idx<Mats->df_inorganic->size() )
+            consmat = Mats->df_inorganic->at(idx)->ID;
         else consmat = "inorganic";
     }
     else if ( type == 420 )
     {
-        if ( idx != 0xffffffff && idx<Mats->organic.size() )
-            consmat = Mats->organic[idx].id;
+        if ( idx != 0xffffffff && idx<Mats->df_organic->size() )
+            consmat = Mats->df_organic->at(idx)->ID;
         else consmat = "organic";
     }
     else if ( type == 421 )   // is 421 plant material? (rope reed fiber rope seemed to be 421 14)
     {
-        if ( idx != 0xffffffff && idx<Mats->plant.size() )
-            consmat = Mats->plant[idx].id;
+        if ( idx != 0xffffffff && idx<Mats->df_plants->size() )
+            consmat = Mats->df_plants->at(idx)->ID;
         else consmat = "plant";
         DFConsole->print ( "Semi-known Construction Material at %d, %d, %d: %s  -form:%d, type:%d\n",x,y,z,consmat.c_str(),form,type );
     }
     else if ( type == 422 )   // is 422 also plant material? (Pigtail fiber bags seemed to be 422 1)
     {
-        if ( idx != 0xffffffff && idx<Mats->plant.size() )
-            consmat = Mats->plant[idx].id;
+        if ( idx != 0xffffffff && idx<Mats->df_plants->size() )
+            consmat = Mats->df_plants->at(idx)->ID;
         else consmat = "plant";
         DFConsole->print ( "Semi-known Construction Material at %d, %d, %d: %s  -form:%d, type:%d\n",x,y,z,consmat.c_str(),form,type );
     }
@@ -2201,7 +2201,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
 
                 if ( tempvein!=-1 )
                 {
-                    mat = Mats->inorganic[tempvein].id;
+                    mat = Mats->df_inorganic->at(tempvein)->ID;
                 }
                 else
                 {
@@ -2718,7 +2718,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         DFHack::df_plant tree;
         tree = *(v->all_plants->at(i));
 
-        vegs[getMapIndex ( tree.x,tree.y,tree.z ) ] = Mats->organic[tree.material].id;
+        vegs[getMapIndex ( tree.x,tree.y,tree.z ) ] = Mats->df_organic->at(tree.material)->ID;
     }
     DFConsole->print ( "%d\n",vegs.size() );
 
