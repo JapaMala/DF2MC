@@ -1,10 +1,4 @@
 PROJECT (df2mc)
-# WTF
-include_directories (
-    ${dfhack_SOURCE_DIR}/library/depends/md5/
-    ${dfhack_SOURCE_DIR}/library/depends/tinyxml/
-    ${CMAKE_SOURCE_DIR}
-)
 
 SET(PROJECT_SRCS
     ${dfhack_SOURCE_DIR}/library/depends/tinyxml/tinystr.cpp
@@ -13,5 +7,24 @@ SET(PROJECT_SRCS
     ${dfhack_SOURCE_DIR}/library/depends/tinyxml/tinyxmlparser.cpp
     source/df2minecraft.cpp
 )
-DFHACK_PLUGIN(df2minecraft ${PROJECT_SRCS} LINK_LIBRARIES z)
+
+if(WIN32)
+    include_directories(
+        ${dfhack_SOURCE_DIR}/library/depends/zlib/
+        ${dfhack_SOURCE_DIR}/library/depends/tinyxml/
+        ${CMAKE_SOURCE_DIR}
+    )
+    LINK_DIRECTORIES (
+        ${LINK_DIRECTORIES}
+        ${dfhack_SOURCE_DIR}/library/depends/zlib/
+    )
+    DFHACK_PLUGIN(df2minecraft ${PROJECT_SRCS} LINK_LIBRARIES zlib.lib)
+else()
+    include_directories(
+        ${dfhack_SOURCE_DIR}/library/depends/tinyxml/
+        ${CMAKE_SOURCE_DIR}
+    )
+    DFHACK_PLUGIN(df2minecraft ${PROJECT_SRCS} LINK_LIBRARIES z)
+endif()
+
 INSTALL(FILES df2mc.xml DESTINATION ${DFHACK_DATA_DESTINATION})
