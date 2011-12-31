@@ -42,20 +42,20 @@ http://github.com/TroZ/DF2MC
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "dfhack/Console.h"
-#include "dfhack/Core.h"
-#include "dfhack/Export.h"
-#include "dfhack/PluginManager.h"
-#include <dfhack/TileTypes.h>
+#include "Console.h"
+#include "Core.h"
+#include "Export.h"
+#include "PluginManager.h"
+#include <TileTypes.h>
 #include <tinyxml/tinyxml.h>
 
 #include <zlib.h>
-#include <dfhack/modules/Maps.h>
-#include <dfhack/modules/Materials.h>
-#include <dfhack/modules/Constructions.h>
-#include <dfhack/modules/Buildings.h>
-#include <dfhack/VersionInfo.h>
-#include <dfhack/modules/Gui.h>
+#include <modules/Maps.h>
+#include <modules/Materials.h>
+#include <modules/Constructions.h>
+#include <modules/Buildings.h>
+#include <VersionInfo.h>
+#include <modules/Gui.h>
 
 
 #ifdef LINUX_BUILD
