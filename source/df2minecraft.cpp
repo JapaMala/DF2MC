@@ -2745,8 +2745,8 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
             mem->resolveClassIDToClassname ( temp.type, typestr );
             //DFConsole->print("Address 0x%x, type %d (%s), %d/%d to %d/%d on level %d\n",temp.origin, temp.type, typestr.c_str(), temp.x1,temp.y1,temp.x2,temp.y2,temp.z);
             //DFConsole->print("Material %d %d\n", temp.material.type, temp.material.index);
-            int32_t custom;
-            if ( ( custom = Bld->GetCustomWorkshopType ( temp ) ) != -1 )
+            int32_t custom = temp.custom_type;
+            if ( custom != -1 )
             {
                 //DFConsole->print("Custom workshop type %s (%d)\n",custom_workshop_types[custom].c_str(),custom);
                 typestr = custom_workshop_types[custom];
