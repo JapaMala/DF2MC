@@ -2725,7 +2725,6 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     //read buildings into a map organized by location (10 bit each for x,y,z packed into an int)
     DFConsole->print ( "Reading Buildings... " );
-    DFHack::Buildings * Bld = DF->getBuildings();
     map <uint32_t, string> custom_workshop_types;
     uint32_t numBuildings;
     DFHack::VersionInfo * mem = DF->vinfo;
@@ -2733,14 +2732,15 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     map<uint32_t,myBuilding> Buildings;
 
-    if ( Bld->Start ( numBuildings ) )
+    numBuildings = Simple::Buildings::getNumBuildings();
+    if ( numBuildings )
     {
-        Bld->ReadCustomWorkshopTypes ( custom_workshop_types );
+        Simple::Buildings::ReadCustomWorkshopTypes ( custom_workshop_types );
 
         for ( uint32_t i = 0; i < numBuildings; i++ )
         {
-            DFHack::t_building temp;
-            Bld->Read ( i, temp );
+            DFHack::Simple::Buildings::t_building temp;
+            Simple::Buildings::Read ( i, temp );
             std::string typestr;
             mem->resolveClassIDToClassname ( temp.type, typestr );
             //DFConsole->print("Address 0x%x, type %d (%s), %d/%d to %d/%d on level %d\n",temp.origin, temp.type, typestr.c_str(), temp.x1,temp.y1,temp.x2,temp.y2,temp.z);
