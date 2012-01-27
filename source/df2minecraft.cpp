@@ -110,6 +110,11 @@ http://github.com/TroZ/DF2MC
 
 using namespace std;
 using namespace DFHack;
+using namespace DFHack::Simple;
+using df::global::world;
+using df::enums::feature_type::feature_type;
+using df::enums::item_type::item_type;
+using df::enums::tile_liquid::tile_liquid;
 
 #define CHUNK (1024*256)
 
@@ -1763,7 +1768,7 @@ void addObject ( uint8_t* mclayers, uint8_t* mcdata, uint8_t *object, int dfx, i
 }
 
 
-void getObjDir ( DFHack::Maps *Maps,DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y,int z,int bx, int by,const char* classname,
+void getObjDir ( DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y,int z,int bx, int by,const char* classname,
                  const char* mat, int varient,const char* full,const char* specmat,const char* consmat,const bool building = false )
 {
     //this will find and place in the string dir the letters of the high side of a ramp
@@ -1820,9 +1825,9 @@ void getObjDir ( DFHack::Maps *Maps,DFHack::mapblock40d *Bl,TiXmlElement *uio,ch
             }
             else
             {
-                if ( Maps->getBlock ( blockx,blocky,z ) )
+                if ( Maps::getBlock ( blockx,blocky,z ) )
                 {
-                    Maps->ReadBlock40d ( blockx,blocky,z, &B );
+                    Maps::ReadBlock40d ( blockx,blocky,z, &B );
                     Block=&B;
                     lastblockx = blockx;
                     lastblocky = blocky;
@@ -1875,7 +1880,7 @@ void getObjDir ( DFHack::Maps *Maps,DFHack::mapblock40d *Bl,TiXmlElement *uio,ch
 
 }
 
-int getBuildingDir ( DFHack::Maps *Maps,map<uint32_t,myBuilding> Buildings,DFHack::mapblock40d *Bl,TiXmlElement *uio,int x,int y,int z,int bx, int by,
+int getBuildingDir ( map<uint32_t,myBuilding> Buildings,DFHack::mapblock40d *Bl,TiXmlElement *uio,int x,int y,int z,int bx, int by,
                      const char* thisBuilding,const char*mat, const char* full,const char* specmat,const char* buildingToFace )
 {
 
@@ -1936,7 +1941,7 @@ int getBuildingDir ( DFHack::Maps *Maps,map<uint32_t,myBuilding> Buildings,DFHac
     if ( obj==NULL )   //no match found - now check for walls
     {
         dir[0]='\0';
-        getObjDir ( Maps,Bl,uio,dir,x,y,z,bx,by,thisBuilding,mat,0,full,specmat,NULL,true );
+        getObjDir ( Bl,uio,dir,x,y,z,bx,by,thisBuilding,mat,0,full,specmat,NULL,true );
 
         return - ( atoi ( dir ) );
     }
@@ -1946,7 +1951,7 @@ int getBuildingDir ( DFHack::Maps *Maps,map<uint32_t,myBuilding> Buildings,DFHac
     }
 }
 
-int findLevels ( DFHack::Maps *Maps,int xmin,int xmax,int ymin,int ymax,int zmax,uint32_t typeToFind )
+int findLevels ( int xmin,int xmax,int ymin,int ymax,int zmax,uint32_t typeToFind )
 {
 
     DFHack::mapblock40d Block;
@@ -1962,9 +1967,9 @@ int findLevels ( DFHack::Maps *Maps,int xmin,int xmax,int ymin,int ymax,int zmax
             for ( int y=ymin; ( y<ymax ) && ( !found );y++ )
             {
 
-                if ( !Maps->getBlock ( x,y,z ) )
+                if ( !Maps::getBlock ( x,y,z ) )
                     continue;
-                Maps->ReadBlock40d ( x,y,z, &Block );
+                Maps::ReadBlock40d ( x,y,z, &Block );
 
                 for ( uint32_t xx=0;xx<SQUARESPERBLOCK&&!found;xx++ )
                 {
@@ -1998,16 +2003,18 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
     consmat="unknown";
     if ( type == 0 )
     {
-        if ( idx != 0xffffffff && idx<Mats->df_inorganic->size() )
-            consmat = Mats->df_inorganic->at(idx)->ID;
+        if ( idx != 0xffffffff && idx< world->raws.inorganics.size() )
+            consmat = world->raws.inorganics[idx]->id;
         else consmat = "inorganic";
     }
-    else if ( type == 420 )
+    // FIXME: this is WRONG!
+    else if ( type == 420 || type == 421 || type == 422)
     {
-        if ( idx != 0xffffffff && idx<Mats->df_organic->size() )
-            consmat = Mats->df_organic->at(idx)->ID;
+        if ( idx != 0xffffffff && idx< world->raws.plants.all.size() )
+            consmat = world->raws.plants.all[idx]->id;
         else consmat = "organic";
     }
+    /*
     else if ( type == 421 )   // is 421 plant material? (rope reed fiber rope seemed to be 421 14)
     {
         if ( idx != 0xffffffff && idx<Mats->df_plants->size() )
@@ -2022,6 +2029,7 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
         else consmat = "plant";
         DFConsole->print ( "Semi-known Construction Material at %d, %d, %d: %s  -form:%d, type:%d\n",x,y,z,consmat.c_str(),form,type );
     }
+    */
     else if ( type == 7 )
     {
         consmat = "coal";
@@ -2079,16 +2087,16 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
     }
     switch ( form )
     {
-    case constr_bar:
+    case df::enums::item_type::item_type::BAR:
         mat="bars";
         break;
-    case constr_block:
+    case df::enums::item_type::BLOCKS:
         mat="blocks";
         break;
-    case constr_boulder:
+    case df::enums::item_type::BOULDER:
         mat="stone";
         break;
-    case constr_logs:
+    case df::enums::item_type::WOOD:
         mat="logs";
         break;
     default:
@@ -2096,9 +2104,9 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
     }
 }
 
-void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vector <uint16_t> > layerassign,
-                      vector<DFHack::t_feature> global_features, std::map <DFHack::planecoord, std::vector<DFHack::t_feature *> > local_features,
-                      map<uint32_t,myConstruction> Constructions, map<uint32_t,myBuilding> Buildings, map<uint32_t,std::string> vegs,
+
+void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > layerassign,
+                      map<uint32_t,myConstruction> & Constructions, map<uint32_t,myBuilding> & Buildings, map<uint32_t,std::string> & vegs,
                       TiXmlElement *uio, uint8_t* mclayers, uint8_t* mcdata,
                       uint32_t dfblockx, uint32_t dfblocky, uint32_t zzz, uint32_t zcount,
                       uint32_t xoffset, uint32_t yoffset, int mcxsquares, int mcysquares )
@@ -2107,16 +2115,17 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
     DFHack::mapblock40d Block;
 
     // read data
-    Maps->ReadBlock40d ( dfblockx,dfblocky,zzz, &Block );
+    Maps::ReadBlock40d ( dfblockx,dfblocky,zzz, &Block );
     //Maps->ReadTileTypes(x,y,z, &tiletypes);
     //Maps->ReadDesignations(x,y,z, &designations);
 
-    vector<DFHack::t_vein *> veins;
-    vector<DFHack::t_spattervein *> splatter;
-    Maps->SortBlockEvents ( dfblockx,dfblocky,zzz,&veins,NULL,&splatter );
+    vector<df::block_square_event_mineralst *> veins;
+    vector<df::block_square_event_material_spatterst *> splatter;
+    Maps::SortBlockEvents ( dfblockx,dfblocky,zzz,&veins,NULL,&splatter );
     char tempstr[256];
+    t_feature local, global;
 
-
+    Maps::ReadFeatures(dfblockx,dfblocky,zzz,&local, &global);
     for ( uint32_t dfoffsetx=0;dfoffsetx<SQUARESPERBLOCK;dfoffsetx++ )
     {
         for ( uint32_t dfoffsety=0;dfoffsety<SQUARESPERBLOCK;dfoffsety++ )
@@ -2126,22 +2135,59 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
             uint32_t dfy = dfblocky*SQUARESPERBLOCK + dfoffsety;
             int16_t tiletype = Block.tiletypes[dfoffsetx][dfoffsety]; //this is the type of terrian at the location (or at least the tiletype.c(lass) is)
 
-            naked_designation &des = Block.designation[dfoffsetx][dfoffsety].bits; //designations at this location
+            df::tile_designation &des = Block.designation[dfoffsetx][dfoffsety]; //designations at this location
 
             std::string mat; //item material
             std::string consmat;//material of construction
 
-            if ( tileTypeTable[tiletype].material != CONSTRUCTED )
+            int16_t temp_inorganic = -1;
+            TileMaterial tilemat = tileTypeTable[tiletype].material;
+            if ( tilemat == FEATSTONE )
             {
-                int16_t tempvein = -1;
-
+                // global feature overrides
+                int16_t idx = Block.global_feature;
+                if ( idx != -1 && Block.designation[dfoffsetx][dfoffsety].bits.feature_global)
+                {
+                    if(global.type != -1 && global.main_material == 0)
+                    {
+                        temp_inorganic = global.sub_material;
+                    }
+                    else
+                    {
+                        temp_inorganic = -1;
+                    }
+                }
+                // local feature overrides
+                idx = Block.local_feature;
+                if ( idx != -1 && Block.designation[dfoffsetx][dfoffsety].bits.feature_local)
+                {
+                    if(local.type != -1 && local.main_material == 0)
+                    {
+                        temp_inorganic = local.sub_material;
+                    }
+                    else
+                    {
+                        temp_inorganic = -1;
+                    }
+                }
+                if ( temp_inorganic!=-1 )
+                {
+                    mat = world->raws.inorganics[temp_inorganic]->id;
+                }
+                else
+                {
+                    mat.clear();
+                }
+            }
+            else if ( tilemat == SOIL || tilemat == STONE )
+            {
                 //try to find material in base layer type
 
                 uint8_t test = Block.designation[dfoffsetx][dfoffsety].bits.biome;
                 if ( test < sizeof ( Block.biome_indices ) )
                 {
                     //otherwise memory error - not sure how to handle, but shouldn't happen
-                    tempvein = layerassign[Block.biome_indices[test]][Block.designation[dfoffsetx][dfoffsety].bits.geolayer_index];
+                    temp_inorganic = layerassign[Block.biome_indices[test]][Block.designation[dfoffsetx][dfoffsety].bits.geolayer_index];
                 }
 
                 //find material in veins
@@ -2149,67 +2195,23 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 for ( int v = 0; v < ( int ) veins.size();v++ )
                 {
                     // and the bit array with a one-bit mask, check if the bit is set
-                    bool set = !! ( ( ( 1 << dfoffsetx ) & veins[v]->assignment[dfoffsety] ) >> dfoffsetx );
+                    bool set = !! ( ( ( 1 << dfoffsetx ) & veins[v]->tile_bitmask[dfoffsety] ) >> dfoffsetx );
                     if ( set )
                     {
                         // store matgloss
-                        tempvein = veins[v]->type;
+                        temp_inorganic = veins[v]->inorganic_mat;
                     }
                 }
-                // global feature overrides
-                int16_t idx = Block.global_feature;
-                if ( idx != -1 && uint16_t ( idx ) < global_features.size() && global_features[idx].type == DFHack::feature_Underworld )
+                if ( temp_inorganic!=-1 )
                 {
-                    if ( Block.designation[dfoffsetx][dfoffsety].bits.feature_global )
-                    {
-                        if ( global_features[idx].main_material == 0 )   // stone
-                        {
-                            tempvein = global_features[idx].sub_material;
-                        }
-                        else
-                        {
-                            tempvein = -1;
-                        }
-                    }
-                }
-                //check local features
-                idx = Block.local_feature;
-                if ( idx != -1 )
-                {
-                    DFHack::planecoord pc;
-                    pc.dim.x = dfblockx;
-                    pc.dim.y = dfblocky;
-                    std::map <DFHack::planecoord, std::vector<DFHack::t_feature *> >::iterator it;
-                    it = local_features.find ( pc );
-                    if ( it != local_features.end() )
-                    {
-                        std::vector<DFHack::t_feature *>& vectr = ( *it ).second;
-                        if ( uint16_t ( idx ) < vectr.size() && vectr[idx]->type == DFHack::feature_Adamantine_Tube )
-                            if ( Block.designation[dfoffsetx][dfoffsety].bits.feature_local && DFHack::isWallTerrain ( Block.tiletypes[dfoffsetx][dfoffsety] ) )
-                            {
-                                if ( vectr[idx]->main_material == 0 )   // stone
-                                {
-                                    tempvein = vectr[idx]->sub_material;
-                                }
-                                else
-                                {
-                                    tempvein = -1;
-                                }
-                            }
-                    }
-                }
-
-                if ( tempvein!=-1 )
-                {
-                    mat = Mats->df_inorganic->at(tempvein)->ID;
+                    mat = world->raws.inorganics[temp_inorganic]->id;
                 }
                 else
                 {
                     mat.clear();
                 }
-
             }
-            else
+            else if (tilemat == CONSTRUCTED)
             {
                 //find construction and locate it's material
                 mat.clear();
@@ -2226,10 +2228,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                     mat="unknown";
                     consmat="unknown";
                 }
-
             }
-
-
 
             char classname[128];
             std::string plant;
@@ -2265,7 +2264,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 if ( classname[0]=='\0' )
                 {
                     char dir[16];
-                    getObjDir ( Maps,&Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,"ramp",TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(),consmat.c_str() );
+                    getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,"ramp",TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(),consmat.c_str() );
                     snprintf ( classname,127,"%s%s",TileClassNames[tileTypeTable[tiletype].shape],dir );
                 }
             }
@@ -2286,7 +2285,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                     if ( directionalWalls )
                     {
                         char dir[16];
-                        getObjDir ( Maps,&Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,TileClassNames[tileTypeTable[tiletype].shape],TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(),consmat.c_str() );
+                        getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,TileClassNames[tileTypeTable[tiletype].shape],TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(),consmat.c_str() );
                         snprintf ( classname,127,"%s%s",TileClassNames[tileTypeTable[tiletype].shape],dir );
                     }
                     else
@@ -2339,14 +2338,14 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 myBuilding mb = it->second;
                 mat="unknown";
                 char *specmat = NULL;
-                int form = constr_block;
+                int form = item_type::BLOCKS;
                 if ( mb.material.type == 0 )
                 {
-                    form = constr_boulder;
+                    form = item_type::BOULDER;
                 }
                 else if ( mb.material.type == 420 )
                 {
-                    form = constr_logs;
+                    form = item_type::WOOD;
                 }
                 else
                 {
@@ -2366,7 +2365,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 {
                     toFace = it->second;
                 }
-                int dir = getBuildingDir ( Maps, Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,building,mat.c_str(),"building",specmat,toFace.c_str() );
+                int dir = getBuildingDir ( Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,building,mat.c_str(),"building",specmat,toFace.c_str() );
 
                 snprintf ( building,255,"%s.%s",mb.type,mb.desc );
                 building[255]='\0';
@@ -2387,18 +2386,18 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
 
 
             //add water/magma (liquid) if any
-            if ( des.flow_size>0 )
+            if ( des.bits.flow_size>0 )
             {
 
                 char *type = "magma";
-                if ( des.liquid_type == DFHack::liquid_water )
+                if ( des.bits.liquid_type == tile_liquid::Water )
                 {
                     type = "water";
                 }
 
-                snprintf ( classname,127,"%s.%d",type,des.flow_size );
+                snprintf ( classname,127,"%s.%d",type,des.bits.flow_size );
 
-                object = getFlow ( uio,dfx, dfy, zzz, classname, type ,des.flow_size );
+                object = getFlow ( uio,dfx, dfy, zzz, classname, type ,des.bits.flow_size );
                 if ( object!=NULL )
                 {
                     addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz, xoffset, yoffset, zcount, mcxsquares, mcysquares );
@@ -2407,7 +2406,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
 
 
             //add torch if any 'dark' and is floor, and no mud (cave)
-            if ( tileTypeTable[tiletype].shape == FLOOR && ( des.light==0 || des.skyview==0 || des.subterranean>0 ) )
+            if ( tileTypeTable[tiletype].shape == FLOOR && ( des.bits.light==0 || des.bits.outside==0 || des.bits.subterranean>0 ) )
             {
                 //we will add torches to floors that aren't muddy as muddy floors are caves (or farms) usually, which we don't want lit,- we will claim the mud puts out the torch
 
@@ -2416,9 +2415,9 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 bool mud = false;
                 for ( int v = 0; v < ( int ) splatter.size() &&!mud;v++ )
                 {
-                    if ( splatter[v]->mat1=0xC )  //magic number for mud - see cleanmap.cpp - turns out not really - this is any spatter, mud, blood, vomit, etc.
+                    if ( splatter[v]->mat_type=0xC )  //magic number for mud - see cleanmap.cpp - turns out not really - this is any spatter, mud, blood, vomit, etc.
                     {
-                        if ( splatter[v]->intensity[dfoffsetx][dfoffsety]>0 )
+                        if ( splatter[v]->amount[dfoffsetx][dfoffsety]>0 )
                         {
                             mud=true; //yes, this tile is muddy
                         }
@@ -2429,11 +2428,11 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                 {
                     //ok, good spot for torch - add if the random number is less than the chance depending on the 'dark' type, we don't want every floor to have a torch, just randomly placed
                     int percent = 0;
-                    if ( des.skyview==0 )
+                    if ( des.bits.outside == 0 )
                         percent = max ( percent,torchPerInside );
-                    if ( des.light==0 )
+                    if ( des.bits.light == 0 )
                         percent = max ( percent,torchPerDark );
-                    if ( des.subterranean>0 ) //what are possible values
+                    if ( des.bits.subterranean > 0 ) //what are possible values
                         percent = max ( percent,torchPerSubter );
 
                     if ( ( rand() %100 ) <percent )
@@ -2446,7 +2445,7 @@ void convertDFBlock ( DFHack::Maps *Maps, DFHack::Materials * Mats, vector< vect
                         {
                             toFace = it->second;
                         }
-                        int dir = getBuildingDir ( Maps, Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,"torch","air",NULL,NULL,toFace.c_str() );
+                        int dir = getBuildingDir ( Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,"torch","air",NULL,NULL,toFace.c_str() );
 
                         object = getBuilding ( uio,dfx, dfy, zzz, "torch", dir, "air" );
                         if ( object!=NULL )
@@ -2489,15 +2488,13 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         }
     }
 
-    DFHack::Maps * Maps = DF->getMaps();
-
     // init the map
-    if ( !Maps->Start() )
+    if ( !Maps::IsValid() )
     {
         cerr << "Can't init map." << endl;
         return 103;
     }
-    Maps->getSize ( x_max,y_max,z_max );
+    Maps::getSize ( x_max,y_max,z_max );
 
     DFConsole->print ( "DF Map size in \'blocks\' %dx%d with %d levels (a 3x3 block is one embark space)\n",x_max,y_max,z_max );
     DFConsole->print ( "DF Map size in squares %d, %d, %d\n",x_max*SQUARESPERBLOCK,y_max*SQUARESPERBLOCK,z_max );
@@ -2534,7 +2531,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         else
         {
             //keep top limitlevels, but only airtokeep air levels
-            findLevels ( Maps,xoffset,x_max,yoffset,y_max,z_max, ( 1<<EMPTY ) ^0xffff );
+            findLevels ( xoffset,x_max,yoffset,y_max,z_max, ( 1<<EMPTY ) ^0xffff );
 
             //ok levels that are not all air are now marked
             //we need to add 'airtokeep' levels to the top and then limit it to limitlevels
@@ -2581,7 +2578,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     {
 
         //keep 'interesting' levels and airtokeep air levels
-        findLevels ( Maps,xoffset,x_max,yoffset,y_max,z_max, ( 1<<FLOOR ) + ( 1<<PILLAR ) + ( 1<<FORTIFICATION ) + ( 1<<RAMP ) + (1<<RAMP_TOP ) + (1<<RIVER_BED) );
+        findLevels ( xoffset,x_max,yoffset,y_max,z_max, ( 1<<FLOOR ) + ( 1<<PILLAR ) + ( 1<<FORTIFICATION ) + ( 1<<RAMP ) + (1<<RAMP_TOP ) + (1<<RIVER_BED) );
 
         //ok, interesting levels are marked, mark the airtokeep levels above the top most interesting level
         uint32_t top = z_max;
@@ -2686,20 +2683,8 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         return 20;
     }
 
-    if ( !Maps->ReadGlobalFeatures ( global_features ) )
-    {
-        DFConsole->printerr ("Can't get global features.\n");
-        return 104;
-    }
-
-    if ( !Maps->ReadLocalFeatures ( local_features ) )
-    {
-        DFConsole->printerr ("Can't get local features.\n");
-        return 105;
-    }
-
     // get region geology
-    if ( !Maps->ReadGeology ( layerassign ) )
+    if ( !Maps::ReadGeology ( layerassign ) )
     {
         DFConsole->printerr ("Can't get region geology.\n");
         return 106;
@@ -2707,18 +2692,14 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
 
     DFConsole->print ( "\nReading Plants... " );
-    DFHack::Vegetation * v = DF->getVegetation();
-    uint32_t numVegs = 0;
-    v->Start ();
+    uint32_t numVegs = Vegetation::getCount();
 
     //read vegetation into a map for faster access later
     map<uint32_t,std::string> vegs;
-    for ( uint32_t i =0; i < v->all_plants->size(); i++ )
+    for ( uint32_t i =0; i < numVegs; i++ )
     {
-        DFHack::df_plant tree;
-        tree = *(v->all_plants->at(i));
-
-        vegs[getMapIndex ( tree.x,tree.y,tree.z ) ] = Mats->df_organic->at(tree.material)->ID;
+        df::plant * p = Vegetation::getPlant(i);
+        vegs[getMapIndex ( p->pos.x,p->pos.y,p->pos.z ) ] = df::global::world->raws.plants.all[p->material]->id;
     }
     DFConsole->print ( "%d\n",vegs.size() );
 
@@ -2847,22 +2828,19 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     //Constructions
     DFConsole->print ( "Reading Constructions... " );
-    DFHack::Constructions *Cons = DF->getConstructions();
-    uint32_t numConstr;
-    Cons->Start ( numConstr );
+    uint32_t numConstr = Simple::Constructions::getCount();
     map<uint32_t,myConstruction> Constructions;
     myConstruction *consmats = new myConstruction[numConstr];
 
-    t_construction con;
     for ( uint32_t i = 0; i < numConstr; i++ )
     {
-        Cons->Read ( i,con );
+        df::construction * con = Simple::Constructions::getConstruction ( i );
 
-        consmats[i].mat_type = con.mat_type;
-        consmats[i].mat_idx = con.mat_idx;
-        consmats[i].form = con.form;
+        consmats[i].mat_type = con->mat_type;
+        consmats[i].mat_idx = con->mat_index;
+        consmats[i].form = con->item_type;
 
-        uint32_t index = getMapIndex ( con.x,con.y,con.z );
+        uint32_t index = getMapIndex ( con->pos.x,con->pos.y,con->pos.z );
         Constructions[index] = consmats[i];
     }
     DFConsole->print ( "%d\n",Constructions.size() );
@@ -2901,11 +2879,10 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
             for ( uint32_t dfblocky = yoffset; dfblocky< y_max;dfblocky++ )
             {
 
-                if ( Maps->getBlock ( dfblockx,dfblocky,zzz ) )
+                if ( Maps::getBlock ( dfblockx,dfblocky,zzz ) )
                 {
 
-                    convertDFBlock ( Maps, Mats, layerassign, global_features, local_features,
-                                     Constructions, Buildings, vegs,
+                    convertDFBlock ( Mats, layerassign, Constructions, Buildings, vegs,
                                      uio, mclayers,mcdata,
                                      dfblockx, dfblocky, zzz, zcount, xoffset, yoffset, mcxsquares, mcysquares );
 
