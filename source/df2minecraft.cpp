@@ -56,6 +56,7 @@ http://github.com/TroZ/DF2MC
 #include <modules/Buildings.h>
 #include <VersionInfo.h>
 #include <modules/Gui.h>
+#include "df/tiletype.h"
 
 
 #ifdef LINUX_BUILD
@@ -110,7 +111,6 @@ http://github.com/TroZ/DF2MC
 
 using namespace std;
 using namespace DFHack;
-using namespace DFHack::Simple;
 using df::global::world;
 using df::enums::feature_type::feature_type;
 using df::enums::item_type::item_type;
@@ -146,33 +146,29 @@ TiXmlElement *xmlplants;
 TiXmlElement *xmlbuildings;
 TiXmlElement *xmlflows;
 
-const char TileClassNames[23][16] =
+// FIXME: really SHOULD be obsolete
+const char TileClassNames[][17] =
 {
     "empty",
+    "floor"
+    "boulder",
+    "pebbles",
     "wall",
-    "pillar",
-    "brook_bed",
     "forticication",
     "stairup",
     "stairdown",
     "stairupdown",
     "ramp",
     "ramptop",
-    "floor",
-    "brook_top",
-    "river_bed",
-    "pool",
-    "treedead",
+    "brook_bed",
+    "river_top",
     "tree",
-    "saplingdead",
     "sapling",
-    "shrubdead",
     "shrub",
-    "boulder",
-    "pebbles",
     "endless_pit"
 };
-const char TileMaterialNames[19][16]=
+
+const char TileMaterialNames[][21]=
 {
     "air",
     "soil",
@@ -181,20 +177,23 @@ const char TileMaterialNames[19][16]=
     "obsidian",
     "vein",
     "ice",
+    "constructed",
     "grass",
     "grass2",
-    "grassdead",
     "grassdry",
-    "driftwood",
+    "grassdead",
     "hfs",
-    "magma",
     "campfire",
     "fire",
     "ashes",
-    "constructed",
-    "cyanglow"
+    "magma",
+    "driftwood",
+    "pool",
+    "brook",
+    "river"
 };
 
+// FIXME: move to df-structures
 const char* Months[13][16]=
 {
     "Granite",
@@ -1777,7 +1776,7 @@ void getObjDir ( DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y
     DFHack::mapblock40d *BlockLast = Bl;
     DFHack::mapblock40d B;
     //TileClass tc;
-    TileShape ts;
+    df::tiletype_shape ts;
 
     int blockx,blocky,offsetx,offsety;
     int lastblockx = bx;
@@ -1841,8 +1840,8 @@ void getObjDir ( DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y
             //check location for wall or fortification
             if ( Block!=NULL )
             {
-                ts = tileTypeTable[Block->tiletypes[offsetx][offsety]].shape;
-                if ( ts == WALL || ts == PILLAR || ts == FORTIFICATION )
+                ts = tileShape(Block->tiletypes[offsetx][offsety]);
+                if ( ts == tiletype_shape::WALL || ts == tiletype_shape::FORTIFICATION )
                 {
                     *pos= ( '0'+i );
                     pos++;
@@ -1975,8 +1974,7 @@ int findLevels ( int xmin,int xmax,int ymin,int ymax,int zmax,uint32_t typeToFin
                 {
                     for ( uint32_t yy=0;yy<SQUARESPERBLOCK&&!found;yy++ )
                     {
-
-                        int type = tileTypeTable[Block.tiletypes[xx][yy]].shape;
+                        int type = tileShape(Block.tiletypes[xx][yy]);
                         int val = ( 1<<type ) &typeToFind;
                         if ( val )
                         {
@@ -2133,7 +2131,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
 
             uint32_t dfx = dfblockx*SQUARESPERBLOCK + dfoffsetx;
             uint32_t dfy = dfblocky*SQUARESPERBLOCK + dfoffsety;
-            int16_t tiletype = Block.tiletypes[dfoffsetx][dfoffsety]; //this is the type of terrian at the location (or at least the tiletype.c(lass) is)
+            df::tiletype tiletype = Block.tiletypes[dfoffsetx][dfoffsety]; //this is the type of terrian at the location (or at least the tiletype.c(lass) is)
 
             df::tile_designation &des = Block.designation[dfoffsetx][dfoffsety]; //designations at this location
 
@@ -2141,8 +2139,8 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
             std::string consmat;//material of construction
 
             int16_t temp_inorganic = -1;
-            TileMaterial tilemat = tileTypeTable[tiletype].material;
-            if ( tilemat == FEATSTONE )
+            df::tiletype_material tilemat = tileMaterial(tiletype);
+            if ( tilemat == tiletype_material::FEATURE )
             {
                 // global feature overrides
                 int16_t idx = Block.global_feature;
@@ -2179,7 +2177,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                     mat.clear();
                 }
             }
-            else if ( tilemat == SOIL || tilemat == STONE )
+            else if ( tilemat == tiletype_material::SOIL || tilemat == tilemat == tiletype_material::STONE )
             {
                 //try to find material in base layer type
 
@@ -2211,7 +2209,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                     mat.clear();
                 }
             }
-            else if (tilemat == CONSTRUCTED)
+            else if (tilemat == tiletype_material::CONSTRUCTION)
             {
                 //find construction and locate it's material
                 mat.clear();
@@ -2233,49 +2231,46 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
             char classname[128];
             std::string plant;
             classname[0]='\0';
-            int variant = tileTypeTable[tiletype].variant;
+            int variant = tileVariant(tiletype);
             uint8_t* object = NULL;
-            switch ( tileTypeTable[tiletype].shape )
+            switch ( tileShape(tiletype) )
             {
-            case TREE_DEAD:
-            case TREE_OK:
-            case SAPLING_DEAD:
-            case SAPLING_OK:
-            case SHRUB_DEAD:
-            case SHRUB_OK:
+            case tiletype_shape::TREE:
+            case tiletype_shape::SAPLING:
+            case tiletype_shape::SHRUB:
             {
                 map<uint32_t,std::string>::iterator vit;
                 vit = vegs.find ( getMapIndex ( dfx,dfy,zzz ) );
                 if ( vit!=vegs.end() )
                 {
                     plant = vit->second;
-                    snprintf ( classname,127,"%s.%s",TileClassNames[tileTypeTable[tiletype].shape],plant.c_str() );
+                    snprintf ( classname,127,"%s.%s",TileClassNames[tileShape(tiletype)],plant.c_str() );
                 }
                 else
                 {
                     DFConsole->print ( "Cant find plant that should already be defined!\n" );
                 }
 
-                object = getPlant ( uio,dfx, dfy, zzz,classname, TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str() );
+                object = getPlant ( uio,dfx, dfy, zzz,classname, TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str() );
             }
             break;
-            case RAMP:
+            case tiletype_shape::RAMP:
             {
                 if ( classname[0]=='\0' )
                 {
                     char dir[16];
-                    getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,"ramp",TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(),consmat.c_str() );
-                    snprintf ( classname,127,"%s%s",TileClassNames[tileTypeTable[tiletype].shape],dir );
+                    getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,"ramp",TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(),consmat.c_str() );
+                    snprintf ( classname,127,"%s%s",TileClassNames[tileShape(tiletype)],dir );
                 }
             }
             break;
-            case STAIR_UP:
-            case STAIR_DOWN:
-            case STAIR_UPDOWN:
+            case tiletype_shape::STAIR_UP:
+            case tiletype_shape::STAIR_DOWN:
+            case tiletype_shape::STAIR_UPDOWN:
             {
                 if ( classname[0]=='\0' )
                 {
-                    snprintf ( classname,127,"%s%d",TileClassNames[tileTypeTable[tiletype].shape],zcount%4 );//z$4 is the level height mod 4 so you can do spiral stairs or alterante sides if object defination of 0 = 2 and 1 = 3
+                    snprintf ( classname,127,"%s%d",TileClassNames[tileShape(tiletype)],zcount%4 );//z$4 is the level height mod 4 so you can do spiral stairs or alterante sides if object defination of 0 = 2 and 1 = 3
                 }
             }
             break;
@@ -2285,15 +2280,17 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                     if ( directionalWalls )
                     {
                         char dir[16];
-                        getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,TileClassNames[tileTypeTable[tiletype].shape],TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(),consmat.c_str() );
-                        snprintf ( classname,127,"%s%s",TileClassNames[tileTypeTable[tiletype].shape],dir );
+                        getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,TileClassNames[tileShape(tiletype)],TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(),consmat.c_str() );
+                        snprintf ( classname,127,"%s%s",TileClassNames[tileShape(tiletype)],dir );
                     }
                     else
                     {
-                        strncpy ( classname,TileClassNames[tileTypeTable[tiletype].shape],127 );
+                        strncpy ( classname,TileClassNames[tileShape(tiletype)],127 );
                     }
 
-                    if ( tileTypeTable[tiletype].name!=NULL && strnicmp ( tileTypeTable[tiletype].name,"smooth",5 ) ==0 )  //doing this as des.smooth never seems to be set.
+                    //FIXME: smooth is a property of tile. smooth is also a designation meant to make dwarves avtualy do the smoothing.
+                    // See tiletype_special::SMOOTH
+                    if ( tileName(tiletype)!=NULL && strnicmp ( tileName(tiletype),"smooth",5 ) ==0 )  //doing this as des.smooth never seems to be set.
                     {
                         variant+=10;//and if I could figure out engraved it would be 20 over base variant
                     }
@@ -2301,29 +2298,29 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
 
             }
 
-            if ( tileTypeTable[tiletype].material == 6 )  //ice
+            if ( tileMaterial(tiletype) == tiletype_material::FROZEN_LIQUID )  //ice. or solidified magma, although the game doesn't really support that by default ... :)
             {
                 biome = 1;
             }
 
-            if ( tileTypeTable[tiletype].name == NULL )
+            if ( tileName(tiletype) == NULL )
             {
                 DFConsole->print ( "Unknown tile type at %d,%d layer %d - id is %d, DFHAck needs description\n",dfx,dfy,zzz,tiletype );
                 stats[TERRAIN][UNKNOWN]++;
             }
 
             if ( object==NULL )
-                object = getTerrain ( uio,dfx, dfy, zzz,classname, TileMaterialNames[tileTypeTable[tiletype].material], variant, tileTypeTable[tiletype].name, mat.c_str(), consmat.c_str(),true );
+                object = getTerrain ( uio,dfx, dfy, zzz,classname, TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(), consmat.c_str(),true );
 
             //now copy object in to mclayer array
             addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz, xoffset, yoffset, zcount, mcxsquares, mcysquares );
 
 
             //add tree top if tree
-            if ( ( tileTypeTable[tiletype].shape == TREE_OK ) && ( ( zcount+1 ) < limitlevels ) )
+            if ( ( tileShape(tiletype) == tiletype_shape::TREE ) && ( ( zcount+1 ) < limitlevels ) )
             {
                 snprintf ( classname,127,"%s.%s","treetop",plant.c_str() );
-                object = getPlant ( uio,dfx, dfy, zzz,classname, "air", variant, tileTypeTable[tiletype].name, mat.c_str() );
+                object = getPlant ( uio,dfx, dfy, zzz,classname, "air", variant, tileName(tiletype), mat.c_str() );
                 if ( object!=NULL )
                     addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz+1, xoffset, yoffset, zcount+1, mcxsquares, mcysquares );
             }
@@ -2406,7 +2403,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
 
 
             //add torch if any 'dark' and is floor, and no mud (cave)
-            if ( tileTypeTable[tiletype].shape == FLOOR && ( des.bits.light==0 || des.bits.outside==0 || des.bits.subterranean>0 ) )
+                        if ( tileShape(tiletype) == tiletype_shape::FLOOR && ( des.bits.light==0 || des.bits.outside==0 || des.bits.subterranean>0 ) )
             {
                 //we will add torches to floors that aren't muddy as muddy floors are caves (or farms) usually, which we don't want lit,- we will claim the mud puts out the torch
 
@@ -2531,7 +2528,8 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         else
         {
             //keep top limitlevels, but only airtokeep air levels
-            findLevels ( xoffset,x_max,yoffset,y_max,z_max, ( 1<<EMPTY ) ^0xffff );
+            //FIXME: this is now probably horribly broken because of that math magic.
+            findLevels ( xoffset,x_max,yoffset,y_max,z_max, ( 1<<tiletype_shape::EMPTY ) ^0xffff );
 
             //ok levels that are not all air are now marked
             //we need to add 'airtokeep' levels to the top and then limit it to limitlevels
@@ -2578,7 +2576,8 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     {
 
         //keep 'interesting' levels and airtokeep air levels
-        findLevels ( xoffset,x_max,yoffset,y_max,z_max, ( 1<<FLOOR ) + ( 1<<PILLAR ) + ( 1<<FORTIFICATION ) + ( 1<<RAMP ) + (1<<RAMP_TOP ) + (1<<RIVER_BED) );
+        //FIXME: removed PILLAR and RIVER_BED here, because they aren't tile shapes anymore.
+        findLevels ( xoffset,x_max,yoffset,y_max,z_max, ( 1<<tiletype_shape::FLOOR ) + ( 1<<tiletype_shape::FORTIFICATION ) + ( 1<<tiletype_shape::RAMP ) + (1<<tiletype_shape::RAMP_TOP ) );
 
         //ok, interesting levels are marked, mark the airtokeep levels above the top most interesting level
         uint32_t top = z_max;
@@ -2704,24 +2703,26 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     DFConsole->print ( "%d\n",vegs.size() );
 
 
+    
     //read buildings into a map organized by location (10 bit each for x,y,z packed into an int)
     DFConsole->print ( "Reading Buildings... " );
     map <uint32_t, string> custom_workshop_types;
-    uint32_t numBuildings;
+    uint32_t numBuildings = 0;
     DFHack::VersionInfo * mem = DF->vinfo;
     //DFHack::Position * Pos = DF->getPosition();
 
     map<uint32_t,myBuilding> Buildings;
-
-    numBuildings = Simple::Buildings::getNumBuildings();
+    //FIXME: this is so totally different it's not even funny. Disabled for now.
+    /*
+    numBuildings = Buildings::getNumBuildings();
     if ( numBuildings )
     {
-        Simple::Buildings::ReadCustomWorkshopTypes ( custom_workshop_types );
+        Buildings::ReadCustomWorkshopTypes ( custom_workshop_types );
 
         for ( uint32_t i = 0; i < numBuildings; i++ )
         {
-            DFHack::Simple::Buildings::t_building temp;
-            Simple::Buildings::Read ( i, temp );
+            DFHack::Buildings::t_building temp;
+            Buildings::Read ( i, temp );
             std::string typestr;
             mem->resolveClassIDToClassname ( temp.type, typestr );
             //DFConsole->print("Address 0x%x, type %d (%s), %d/%d to %d/%d on level %d\n",temp.origin, temp.type, typestr.c_str(), temp.x1,temp.y1,temp.x2,temp.y2,temp.z);
@@ -2823,18 +2824,18 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         }
     }
     DFConsole->print ( "%d\n",Buildings.size() );
-
+    */
 
 
     //Constructions
     DFConsole->print ( "Reading Constructions... " );
-    uint32_t numConstr = Simple::Constructions::getCount();
+    uint32_t numConstr = Constructions::getCount();
     map<uint32_t,myConstruction> Constructions;
     myConstruction *consmats = new myConstruction[numConstr];
 
     for ( uint32_t i = 0; i < numConstr; i++ )
     {
-        df::construction * con = Simple::Constructions::getConstruction ( i );
+        df::construction * con = Constructions::getConstruction ( i );
 
         consmats[i].mat_type = con->mat_type;
         consmats[i].mat_idx = con->mat_index;
@@ -2943,9 +2944,8 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     //place the spawn at DF cursor location, if within output area and not a wall
     DFConsole->print ( "\nPlancing spawn location\n" );
-    DFHack::Gui *gui = DF->getGui();
     int32_t cx, cy, cz,ocx,ocy,ocz;
-    gui->getCursorCoords ( ocx,ocy,ocz );
+    Gui::getCursorCoords ( ocx,ocy,ocz );
     cx=ocx;
     cy=ocy;
     cz=ocz;
@@ -3106,14 +3106,9 @@ cin.ignore();
 }
 */
 
-
+DFHACK_PLUGIN("df2minecraft");
 
 DFhackCExport command_result mc_export (Core * c, vector <string> & parameters);
-
-DFhackCExport const char * plugin_name ( void )
-{
-    return "df2minecraft";
-}
 
 DFhackCExport command_result plugin_init ( Core * c, std::vector <PluginCommand> &commands)
 {
