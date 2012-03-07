@@ -112,9 +112,7 @@ http://github.com/TroZ/DF2MC
 using namespace std;
 using namespace DFHack;
 using df::global::world;
-using df::enums::feature_type::feature_type;
-using df::enums::item_type::item_type;
-using df::enums::tile_liquid::tile_liquid;
+using namespace df::enums;
 
 #define CHUNK (1024*256)
 
@@ -2085,16 +2083,16 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
     }
     switch ( form )
     {
-    case df::enums::item_type::item_type::BAR:
+    case item_type::BAR:
         mat="bars";
         break;
-    case df::enums::item_type::BLOCKS:
+    case item_type::BLOCKS:
         mat="blocks";
         break;
-    case df::enums::item_type::BOULDER:
+    case item_type::BOULDER:
         mat="stone";
         break;
-    case df::enums::item_type::WOOD:
+    case item_type::WOOD:
         mat="logs";
         break;
     default:
@@ -2177,7 +2175,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                     mat.clear();
                 }
             }
-            else if ( tilemat == tiletype_material::SOIL || tilemat == tilemat == tiletype_material::STONE )
+            else if ( tilemat == tiletype_material::SOIL || tilemat == tiletype_material::STONE )
             {
                 //try to find material in base layer type
 
