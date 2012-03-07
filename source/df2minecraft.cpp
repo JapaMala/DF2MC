@@ -3122,6 +3122,14 @@ DFhackCExport command_result plugin_shutdown ( Core * c )
 DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
 {
     DFConsole = &(c->con);
+    // first, check if the user is OK with running this...
+    std::string question_out;
+    CommandHistory ch;
+    DFConsole->printerr("This is experimental/broken/crazy. You are running it at your own risk.\n");
+    DFConsole->lineedit("Are you sure? Type in 'yes' if you are: ",question_out,ch);
+    if(question_out != "yes")
+        return CR_OK;
+
     //load settings xml
     TiXmlDocument doc ( "hack/df2mc.xml" );
     bool loadOkay = doc.LoadFile();
