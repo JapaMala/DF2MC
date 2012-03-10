@@ -57,6 +57,7 @@ http://github.com/TroZ/DF2MC
 #include <VersionInfo.h>
 #include <modules/Gui.h>
 #include "df/tiletype.h"
+#include <df/creature_raw.h>
 
 
 #ifdef LINUX_BUILD
@@ -272,13 +273,10 @@ int snowy = 0;
 #define BUILDINGS   4
 int stats[STAT_AREAS][STAT_TYPES];
 
-DFHack::Console * DFConsole;
-
-
-void loadMcMats ( TiXmlDocument* doc )
+void loadMcMats ( TiXmlDocument* doc, color_ostream & out )
 {
 
-    DFConsole->print ( "Loading Minecraft Materials...\n" );
+    out.print ( "Loading Minecraft Materials...\n" );
 
     char* tagname = "minecraftmaterialsalpha";
     TiXmlElement *elm = doc->FirstChildElement();
@@ -342,7 +340,7 @@ void loadMcMats ( TiXmlDocument* doc )
         elm=elm->NextSiblingElement();
     }
 
-    DFConsole->print ( "loaded %d materials\n\n",mcMats.size() );
+    out.print ( "loaded %d materials\n\n",mcMats.size() );
 
 }
 
@@ -461,7 +459,7 @@ std::vector<std::string> split ( const std::string &s, const char *delim, std::v
 }
 
 
-void loadObject ( TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bool allowFace = false )
+void loadObject (DFHack::color_ostream & c, TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bool allowFace = false )
 {
 
     //iterate through elements adding them into the objects map
@@ -495,7 +493,7 @@ void loadObject ( TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bo
             split ( val,",;|",vals );
             if ( vals.size() != ( squaresize*squaresize*squaresize ) )
             {
-                DFConsole->print ( "Object %s doesn't have correct number of materials\n (%d expeted %d) - resetting to Air\n",name,vals.size(), ( squaresize*squaresize*squaresize ) );
+                c.print ( "Object %s doesn't have correct number of materials\n (%d expeted %d) - resetting to Air\n",name,vals.size(), ( squaresize*squaresize*squaresize ) );
                 vals.clear();
                 val = makeAirArray();
                 elm->SetAttribute ( "mat",val.c_str() );
@@ -521,7 +519,7 @@ void loadObject ( TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bo
                     {
                         if ( vals[i].c_str() [0]!='0' )
                         {
-                            DFConsole->print ( "Unknown Minecraft Material %s in object %s - using Air\n",vals[i].c_str(),name );
+                            c.print ( "Unknown Minecraft Material %s in object %s - using Air\n",vals[i].c_str(),name );
                         }
                         obj[i]=0;
                     }
@@ -535,7 +533,7 @@ void loadObject ( TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bo
                 split ( data,",;|",datas );
                 if ( datas.size() != ( squaresize*squaresize*squaresize ) )
                 {
-                    DFConsole->print ( "Object %s doesn't have correct number of materials\n (%d expeted %d) - resetting to 0",name,datas.size(), ( squaresize*squaresize*squaresize ) );
+                    c.print ( "Object %s doesn't have correct number of materials\n (%d expeted %d) - resetting to 0",name,datas.size(), ( squaresize*squaresize*squaresize ) );
                     datas.clear();
                     data = makeZeroArray();
                     elm->SetAttribute ( "data",data.c_str() );
@@ -557,7 +555,7 @@ void loadObject ( TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bo
             //ok, now add to objects map
             if ( objects.find ( name ) !=objects.end() )
             {
-                DFConsole->print ( "\t %s is already defined - overwritting\n",name );
+                c.print ( "\t %s is already defined - overwritting\n",name );
             }
             objects[name] = obj;
 
@@ -581,34 +579,34 @@ void loadObject ( TiXmlElement *elm, std::map<std::string,uint8_t*> &objects, bo
 
 }
 
-void loadDFObjects()
+void loadDFObjects(DFHack::color_ostream & c)
 {
 
-    DFConsole->print ( "Loading DF to MC Object Definations...\n" );
+    c.print ( "Loading DF to MC Object Definations...\n" );
 
     TiXmlElement *elm = xmlmaterials->FirstChildElement();
-    loadObject ( elm,dfMats );
-    DFConsole->print ( "loaded %d DF materials\n",dfMats.size() );
+    loadObject ( c, elm,dfMats );
+    c.print ( "loaded %d DF materials\n",dfMats.size() );
 
     elm = xmlterrain->FirstChildElement();
-    loadObject ( elm,terrain, true );
-    DFConsole->print ( "loaded %d terrain types\n",terrain.size() );
+    loadObject ( c, elm,terrain, true );
+    c.print ( "loaded %d terrain types\n",terrain.size() );
 
     elm = xmlflows->FirstChildElement();
-    loadObject ( elm,flows );
-    DFConsole->print ( "loaded %d flow types\n",flows.size() );
+    loadObject ( c, elm,flows );
+    c.print ( "loaded %d flow types\n",flows.size() );
 
     elm = xmlplants->FirstChildElement();
-    loadObject ( elm,plants );
-    DFConsole->print ( "loaded %d plant types\n",plants.size() );
+    loadObject ( c, elm,plants );
+    c.print ( "loaded %d plant types\n",plants.size() );
 
     elm = xmlbuildings->FirstChildElement();
-    loadObject ( elm,buildings, true );
-    DFConsole->print ( "loaded %d building types\n\n",buildings.size() );
+    loadObject ( c, elm,buildings, true );
+    c.print ( "loaded %d building types\n\n",buildings.size() );
 
 }
 
-int compressFile ( char* src, char* dest )
+int compressFile (DFHack::color_ostream & console, char* src, char* dest )
 {
     //compress file gzip
     int ret, flush;
@@ -620,14 +618,14 @@ int compressFile ( char* src, char* dest )
     FILE *s = fopen ( "out.mcraw","rb" );
     if ( s==NULL )
     {
-        DFConsole->printerr ( "Could not open file for reading, exiting." );
+        console.printerr ( "Could not open file for reading, exiting." );
         return -50;
     }
 
     FILE *f = fopen ( dest,"wb" );
     if ( f==NULL )
     {
-        DFConsole->printerr ( "Could not open file for writing, exiting." );
+        console.printerr ( "Could not open file for writing, exiting." );
         return -51;
     }
 
@@ -640,7 +638,7 @@ int compressFile ( char* src, char* dest )
     ret = deflateInit2 ( &strm, Z_BEST_COMPRESSION,Z_DEFLATED,31,9,Z_DEFAULT_STRATEGY );//the 31 indicates gzip, set to 15 for normal zlib file header
     if ( ret != Z_OK )
     {
-        DFConsole->printerr ( "Unable to initalize compression routine, exiting." );
+        console.printerr ( "Unable to initalize compression routine, exiting." );
         return ret;
     }
 
@@ -719,7 +717,7 @@ void base36 ( int val, char* str )
     strrev ( str );
 }
 
-int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uint8_t* mcblocklight,int mcxsquares,int mcysquares,int mczsquares,int x, int y, int64_t &size )
+int saveChunk ( DFHack::color_ostream & out, char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uint8_t* mcblocklight,int mcxsquares,int mcysquares,int mczsquares,int x, int y, int64_t &size )
 {
 
     //make sure path for chunk exists - this should be x then y but south is +x and east is -y
@@ -900,10 +898,10 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
     close ( of );
 
 
-    int res = compressFile ( "out.mcraw",path );
+    int res = compressFile (out,"out.mcraw",path );
     if ( res != Z_OK )
     {
-        DFConsole->printerr ( "\nError compressing file (%d)\n",res );
+        out.printerr ( "\nError compressing file (%d)\n",res );
     }
     else
     {
@@ -916,17 +914,17 @@ int saveChunk ( char* dirname,uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskyli
         }
         else
         {
-            DFConsole->printerr ( " Error getting file size " );
+            out.printerr ( " Error getting file size " );
         }
     }
 
     return res;
 }
 
-int saveMCLevelAlpha ( uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uint8_t* mcblocklight,int mcxsquares,int mcysquares,int mczsquares, int xs, int ys, int zs,char* name )
+int saveMCLevelAlpha ( DFHack::color_ostream & out, uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uint8_t* mcblocklight,int mcxsquares,int mcysquares,int mczsquares, int xs, int ys, int zs,char* name )
 {
 
-    DFConsole->print ( "\n\nSaving...\n" );
+    out.print ( "\n\nSaving...\n" );
 
     zs++;//I think this is needed - still need to test
 
@@ -964,14 +962,14 @@ int saveMCLevelAlpha ( uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uin
     //ok iterate through 16x16 blocks and save individual chunck files off
     for ( int x=0;x<mcxsquares;x+=16 )
     {
-        DFConsole->print ( "." );
+        out.print ( "." );
         for ( int y=0;y<mcysquares;y+=16 )
         {
             size = 0;
-            int ret = saveChunk ( dirname, mclayers, mcdata, mcskylight, mcblocklight, mcxsquares, mcysquares, mczsquares, x, y, size );
+            int ret = saveChunk ( out, dirname, mclayers, mcdata, mcskylight, mcblocklight, mcxsquares, mcysquares, mczsquares, x, y, size );
             if ( ret != 0 )
             {
-                DFConsole->print ( "Error writing file!\n" );
+                out.print ( "Error writing file!\n" );
                 return ret;
             }
             else
@@ -1137,14 +1135,14 @@ int saveMCLevelAlpha ( uint8_t* mclayers,uint8_t* mcdata,uint8_t* mcskylight,uin
     char filename[512];
     snprintf ( filename,511,"%s/%s",dirname,"level.dat" );
     filename[511]='\0';
-    int res = compressFile ( "out.mcraw",filename );
+    int res = compressFile ( out, "out.mcraw",filename );
     if ( res != Z_OK )
     {
-        DFConsole->printerr ( "\nError compressing file (%d)\n",res );
+        out.printerr ( "\nError compressing file (%d)\n",res );
     }
     else
     {
-        DFConsole->print ( "Done!\nDirectory \'%s\'\n",dirname );
+        out.print ( "Done!\nDirectory \'%s\'\n",dirname );
     }
 
 
@@ -1205,14 +1203,14 @@ inline void lightCubeBlock ( uint8_t *mcblocklight, int xmax, int ymax, int zmax
     mcblocklight[index] = blocklight;
 }
 
-void calcLighting ( uint8_t *mclayers,uint8_t *mcskylight,uint8_t *mcblocklight, int xmax, int ymax, int zmax )
+void calcLighting ( DFHack::color_ostream & out, uint8_t *mclayers,uint8_t *mcskylight,uint8_t *mcblocklight, int xmax, int ymax, int zmax )
 {
 
-    DFConsole->print ( "\nCalculating lighting...\n" );
+    out.print ( "\nCalculating lighting...\n" );
 
     for ( int pass=15;pass>0;pass-- )
     {
-        DFConsole->print ( "." );
+        out.print ( "." );
         for ( int z=zmax-1;z>-1;z-- )
         {
             for ( int y=0;y<ymax;y++ )
@@ -1247,7 +1245,7 @@ void calcLighting ( uint8_t *mclayers,uint8_t *mcskylight,uint8_t *mcblocklight,
     }
 
     //final pass - fill only the partially lit objects
-    DFConsole->print ( " ." );
+    out.print ( " ." );
     for ( int z=zmax-1;z>-1;z-- )
     {
         for ( int y=0;y<ymax;y++ )
@@ -1272,9 +1270,9 @@ void calcLighting ( uint8_t *mclayers,uint8_t *mcskylight,uint8_t *mcblocklight,
 
 }
 
-void calcLightingIndev ( uint8_t *mcdata,uint8_t *mcskylight,uint8_t *mcblocklight, int mcxsquares, int mcysquares, int mczsquares )
+void calcLightingIndev ( DFHack::color_ostream & out, uint8_t *mcdata,uint8_t *mcskylight,uint8_t *mcblocklight, int mcxsquares, int mcysquares, int mczsquares )
 {
-    DFConsole->print ( "  ." );
+    out.print ( "  ." );
     int total = mcxsquares * mcysquares * mczsquares;
     for ( int i = 0; i<total; i++ )
     {
@@ -1330,7 +1328,7 @@ void addUnknown ( TiXmlElement *uio, TiXmlElement *section,const char* name,cons
 
 }
 
-uint8_t* getMaterial ( TiXmlElement *uio,int x, int y, int z,const  char* basicmaterial, int variant=0,
+uint8_t* getMaterial ( DFHack::color_ostream & out, TiXmlElement *uio,int x, int y, int z,const  char* basicmaterial, int variant=0,
                        const char* fullname = NULL, const char* specificmaterial = NULL, const char* constmat = NULL, bool addstats = true )
 {
 
@@ -1466,7 +1464,7 @@ uint8_t* getMaterial ( TiXmlElement *uio,int x, int y, int z,const  char* basicm
             //not even a basic object found - create a basic object for hack/df2mc.xml
             if ( addstats )
             {
-                DFConsole->print ( "location %d,%d,%d is %s\tNOT FOUND!\tcreating %s as air\n",x,y,z,best,loc[0] );
+                out.print ( "location %d,%d,%d is %s\tNOT FOUND!\tcreating %s as air\n",x,y,z,best,loc[0] );
                 stats[MATERIALS][UNKNOWN]++;
 
                 TiXmlElement * ss = new TiXmlElement ( loc[0] );
@@ -1494,12 +1492,12 @@ uint8_t* getMaterial ( TiXmlElement *uio,int x, int y, int z,const  char* basicm
     return material;
 }
 
-uint8_t* getTerrain ( TiXmlElement *uio,int x, int y, int z,const char* classname,const  char* basicmaterial, int variant=0,
+uint8_t* getTerrain ( DFHack::color_ostream & out, TiXmlElement *uio,int x, int y, int z,const char* classname,const  char* basicmaterial, int variant=0,
                       const char* fullname = NULL,const char* specificmaterial = NULL, const char* constmat = NULL,bool addstats=NULL )  //todo, change addstats to an int and see what breaks - missing constmat
 {
 
     //first get the material
-    uint8_t* mat = getMaterial ( uio,x,y,z,basicmaterial, variant,fullname,specificmaterial, constmat, addstats );
+    uint8_t* mat = getMaterial ( out, uio,x,y,z,basicmaterial, variant,fullname,specificmaterial, constmat, addstats );
 
     //now get the terrian
     char name[256];
@@ -1572,12 +1570,12 @@ uint8_t* getFlow ( TiXmlElement *uio,int x, int y, int z,const char* classname,c
     return it->second;
 }
 
-uint8_t* getPlant ( TiXmlElement *uio,int x, int y, int z,const char* classname,const  char* basicmaterial, int variant=0,
+uint8_t* getPlant ( DFHack::color_ostream & out, TiXmlElement *uio,int x, int y, int z,const char* classname,const  char* basicmaterial, int variant=0,
                     const char* fullname = NULL,const char* specificmaterial = NULL,bool addstats=true )
 {
 
     //first get the material
-    uint8_t* mat = getMaterial ( uio,x,y,z,basicmaterial, variant,fullname,specificmaterial );
+    uint8_t* mat = getMaterial ( out, uio,x,y,z,basicmaterial, variant,fullname,specificmaterial );
 
     //now get the terrian
     char name[256];
@@ -1628,12 +1626,12 @@ uint8_t* getPlant ( TiXmlElement *uio,int x, int y, int z,const char* classname,
     return plant;
 }
 
-uint8_t* getBuilding ( TiXmlElement *uio,int x, int y, int z,const char* classname, int direction, const  char* basicmaterial,
+uint8_t* getBuilding ( DFHack::color_ostream & out, TiXmlElement *uio,int x, int y, int z,const char* classname, int direction, const  char* basicmaterial,
                        const char* fullname = NULL,const char* specificmaterial = NULL,bool addstats=true )
 {
 
     //first get the material
-    uint8_t* mat = getMaterial ( uio,x,y,z,basicmaterial, 0,fullname,specificmaterial,NULL,addstats );
+    uint8_t* mat = getMaterial ( out, uio,x,y,z,basicmaterial, 0,fullname,specificmaterial,NULL,addstats );
 
     //now get the building
     char name[256];
@@ -1765,7 +1763,7 @@ void addObject ( uint8_t* mclayers, uint8_t* mcdata, uint8_t *object, int dfx, i
 }
 
 
-void getObjDir ( DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y,int z,int bx, int by,const char* classname,
+void getObjDir ( DFHack::color_ostream & out, DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y,int z,int bx, int by,const char* classname,
                  const char* mat, int varient,const char* full,const char* specmat,const char* consmat,const bool building = false )
 {
     //this will find and place in the string dir the letters of the high side of a ramp
@@ -1856,12 +1854,12 @@ void getObjDir ( DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y
         {
             snprintf ( test,127,"%s%s",classname,dir );
             test[127]='\0';
-            obj = getTerrain ( uio,x,y,z,test,mat,varient,full,specmat,NULL,false );
+            obj = getTerrain ( out, uio,x,y,z,test,mat,varient,full,specmat,NULL,false );
         }
         else
         {
             int idir = atoi ( dir );
-            obj = getBuilding ( uio,x,y,z,classname,-idir,mat,full,specmat,false );
+            obj = getBuilding ( out, uio,x,y,z,classname,-idir,mat,full,specmat,false );
         }
 
         //setup of next DO loop, if needed
@@ -1877,7 +1875,7 @@ void getObjDir ( DFHack::mapblock40d *Bl,TiXmlElement *uio,char *dir,int x,int y
 
 }
 
-int getBuildingDir ( map<uint32_t,myBuilding> Buildings,DFHack::mapblock40d *Bl,TiXmlElement *uio,int x,int y,int z,int bx, int by,
+int getBuildingDir ( DFHack::color_ostream & out, map<uint32_t,myBuilding> Buildings,DFHack::mapblock40d *Bl,TiXmlElement *uio,int x,int y,int z,int bx, int by,
                      const char* thisBuilding,const char*mat, const char* full,const char* specmat,const char* buildingToFace )
 {
 
@@ -1925,7 +1923,7 @@ int getBuildingDir ( map<uint32_t,myBuilding> Buildings,DFHack::mapblock40d *Bl,
             {
                 int idir;
                 idir = atoi ( dir );
-                obj = getBuilding ( uio,x,y,z,thisBuilding,idir,mat,full,specmat,false );
+                obj = getBuilding ( out, uio,x,y,z,thisBuilding,idir,mat,full,specmat,false );
             }
 
             //setup of next DO loop, if needed
@@ -1938,7 +1936,7 @@ int getBuildingDir ( map<uint32_t,myBuilding> Buildings,DFHack::mapblock40d *Bl,
     if ( obj==NULL )   //no match found - now check for walls
     {
         dir[0]='\0';
-        getObjDir ( Bl,uio,dir,x,y,z,bx,by,thisBuilding,mat,0,full,specmat,NULL,true );
+        getObjDir ( out, Bl,uio,dir,x,y,z,bx,by,thisBuilding,mat,0,full,specmat,NULL,true );
 
         return - ( atoi ( dir ) );
     }
@@ -1993,20 +1991,21 @@ int findLevels ( int xmin,int xmax,int ymin,int ymax,int zmax,uint32_t typeToFin
     return count;
 }
 
-void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & consmat, int type, int idx, int form, char* tempstr, int x, int y, int z )
+// FIXME: den of evil. nuke. nuke. nuke. nuke. nuke. BZZT@!
+void getConsMats ( DFHack::color_ostream & out, std::string & mat, std::string & consmat, int type, int idx, int form, char* tempstr, int x, int y, int z )
 {
 
     consmat="unknown";
     if ( type == 0 )
     {
-        if ( idx != 0xffffffff && idx< world->raws.inorganics.size() )
+        if ( idx != -1 && idx< world->raws.inorganics.size() )
             consmat = world->raws.inorganics[idx]->id;
         else consmat = "inorganic";
     }
     // FIXME: this is WRONG!
     else if ( type == 420 || type == 421 || type == 422)
     {
-        if ( idx != 0xffffffff && idx< world->raws.plants.all.size() )
+        if ( idx != -1 && idx< world->raws.plants.all.size() )
             consmat = world->raws.plants.all[idx]->id;
         else consmat = "organic";
     }
@@ -2064,10 +2063,10 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
     }
     else if ( type ==  39 )
     {
-        if ( idx != 0xffffffff && idx<Mats->race.size() )
-            consmat = Mats->race[idx].id.c_str();
+        if ( idx != -1 && idx<world->raws.creatures.all.size() )
+            consmat = world->raws.creatures.all[idx]->creature_id;
         else consmat = "animal";
-        DFConsole->print ( "Semi-known Construction Material at %d, %d, %d: %s  -form:%d, type:%d\n",x,y,z,consmat.c_str(),form,type );
+        out.print ( "Semi-known Construction Material at %d, %d, %d: %s  -form:%d, type:%d\n",x,y,z,consmat.c_str(),form,type );
 
         consmat = "soap";
         //idx I believe is the creature type (I had 103 for One-humped Camel Soap), but nore sure where list of creatures is, and at this point, I'm not making soaps look different
@@ -2078,8 +2077,7 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
         tempstr[255]='\0';
         consmat = tempstr;
         if ( type>0 )
-            DFConsole->print ( "Unknown Construction Material at %d, %d, %d: %s  -form:%d\n",x,y,z,tempstr,form );
-
+            out.print ( "Unknown Construction Material at %d, %d, %d: %s  -form:%d\n",x,y,z,tempstr,form );
     }
     switch ( form )
     {
@@ -2101,7 +2099,7 @@ void getConsMats ( DFHack::Materials * Mats, std::string & mat, std::string & co
 }
 
 
-void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > layerassign,
+void convertDFBlock ( color_ostream & out, vector< vector <uint16_t> > layerassign,
                       map<uint32_t,myConstruction> & Constructions, map<uint32_t,myBuilding> & Buildings, map<uint32_t,std::string> & vegs,
                       TiXmlElement *uio, uint8_t* mclayers, uint8_t* mcdata,
                       uint32_t dfblockx, uint32_t dfblocky, uint32_t zzz, uint32_t zcount,
@@ -2217,7 +2215,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                 it = Constructions.find ( index );
                 if ( it!=Constructions.end() )
                 {
-                    getConsMats ( Mats, mat,  consmat, it->second.mat_type, it->second.mat_idx, it->second.form, tempstr,dfx,dfy,zzz );
+                    getConsMats ( out, mat,  consmat, it->second.mat_type, it->second.mat_idx, it->second.form, tempstr,dfx,dfy,zzz );
                 }
                 else
                 {
@@ -2246,10 +2244,10 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                 }
                 else
                 {
-                    DFConsole->print ( "Cant find plant that should already be defined!\n" );
+                    out.print ( "Cant find plant that should already be defined!\n" );
                 }
 
-                object = getPlant ( uio,dfx, dfy, zzz,classname, TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str() );
+                object = getPlant ( out, uio,dfx, dfy, zzz,classname, TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str() );
             }
             break;
             case tiletype_shape::RAMP:
@@ -2257,7 +2255,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                 if ( classname[0]=='\0' )
                 {
                     char dir[16];
-                    getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,"ramp",TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(),consmat.c_str() );
+                    getObjDir ( out, &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,"ramp",TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(),consmat.c_str() );
                     snprintf ( classname,127,"%s%s",TileClassNames[tileShape(tiletype)],dir );
                 }
             }
@@ -2278,7 +2276,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                     if ( directionalWalls )
                     {
                         char dir[16];
-                        getObjDir ( &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,TileClassNames[tileShape(tiletype)],TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(),consmat.c_str() );
+                        getObjDir ( out, &Block,uio,dir,dfx,dfy,zzz,dfblockx,dfblocky,TileClassNames[tileShape(tiletype)],TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(),consmat.c_str() );
                         snprintf ( classname,127,"%s%s",TileClassNames[tileShape(tiletype)],dir );
                     }
                     else
@@ -2303,12 +2301,12 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
 
             if ( tileName(tiletype) == NULL )
             {
-                DFConsole->print ( "Unknown tile type at %d,%d layer %d - id is %d, DFHAck needs description\n",dfx,dfy,zzz,tiletype );
+                out.print ( "Unknown tile type at %d,%d layer %d - id is %d, DFHAck needs description\n",dfx,dfy,zzz,tiletype );
                 stats[TERRAIN][UNKNOWN]++;
             }
 
             if ( object==NULL )
-                object = getTerrain ( uio,dfx, dfy, zzz,classname, TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(), consmat.c_str(),true );
+                object = getTerrain ( out, uio,dfx, dfy, zzz,classname, TileMaterialNames[tileMaterial(tiletype)], variant, tileName(tiletype), mat.c_str(), consmat.c_str(),true );
 
             //now copy object in to mclayer array
             addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz, xoffset, yoffset, zcount, mcxsquares, mcysquares );
@@ -2318,7 +2316,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
             if ( ( tileShape(tiletype) == tiletype_shape::TREE ) && ( ( zcount+1 ) < limitlevels ) )
             {
                 snprintf ( classname,127,"%s.%s","treetop",plant.c_str() );
-                object = getPlant ( uio,dfx, dfy, zzz,classname, "air", variant, tileName(tiletype), mat.c_str() );
+                object = getPlant ( out, uio,dfx, dfy, zzz,classname, "air", variant, tileName(tiletype), mat.c_str() );
                 if ( object!=NULL )
                     addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz+1, xoffset, yoffset, zcount+1, mcxsquares, mcysquares );
             }
@@ -2348,7 +2346,7 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                     //constr_bar
                 }
 
-                getConsMats ( Mats, mat, consmat, mb.material.type, mb.material.index, form, tempstr, dfx, dfy, zzz );
+                getConsMats ( out, mat, consmat, mb.material.type, mb.material.index, form, tempstr, dfx, dfy, zzz );
 
                 char building[256];
                 snprintf ( building,255,"%s.%s",mb.type,mb.desc );
@@ -2360,19 +2358,19 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                 {
                     toFace = it->second;
                 }
-                int dir = getBuildingDir ( Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,building,mat.c_str(),"building",specmat,toFace.c_str() );
+                int dir = getBuildingDir ( out, Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,building,mat.c_str(),"building",specmat,toFace.c_str() );
 
                 snprintf ( building,255,"%s.%s",mb.type,mb.desc );
                 building[255]='\0';
 
-                object = getBuilding ( uio,dfx, dfy, zzz, building, dir, mat.c_str(), "building", specmat );
+                object = getBuilding ( out, uio,dfx, dfy, zzz, building, dir, mat.c_str(), "building", specmat );
                 if ( object!=NULL )
                 {
                     addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz, xoffset, yoffset, zcount, mcxsquares, mcysquares );
                 }
                 else
                 {
-                    DFConsole->printerr ( "Cant find building that should already be defined!\n" );
+                    out.printerr ( "Cant find building that should already be defined!\n" );
                 }
             }
 
@@ -2440,9 +2438,9 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
                         {
                             toFace = it->second;
                         }
-                        int dir = getBuildingDir ( Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,"torch","air",NULL,NULL,toFace.c_str() );
+                        int dir = getBuildingDir ( out, Buildings, &Block, uio,dfx,dfy,zzz,dfblockx,dfblocky,"torch","air",NULL,NULL,toFace.c_str() );
 
-                        object = getBuilding ( uio,dfx, dfy, zzz, "torch", dir, "air" );
+                        object = getBuilding ( out, uio,dfx, dfy, zzz, "torch", dir, "air" );
                         if ( object!=NULL )
                             addObject ( mclayers, mcdata, object,  dfx,  dfy, zzz, xoffset, yoffset, zcount, mcxsquares, mcysquares );
 
@@ -2453,10 +2451,10 @@ void convertDFBlock ( DFHack::Materials * Mats, vector< vector <uint16_t> > laye
     }
 }
 
-int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
+int convertMaps ( color_ostream & out )
 {
 
-    DFConsole->print ( "\nCalculating size limit...\n" );
+    out.print ( "\nCalculating size limit...\n" );
 
     //setup
 
@@ -2491,8 +2489,8 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     }
     Maps::getSize ( x_max,y_max,z_max );
 
-    DFConsole->print ( "DF Map size in \'blocks\' %dx%d with %d levels (a 3x3 block is one embark space)\n",x_max,y_max,z_max );
-    DFConsole->print ( "DF Map size in squares %d, %d, %d\n",x_max*SQUARESPERBLOCK,y_max*SQUARESPERBLOCK,z_max );
+    out.print ( "DF Map size in \'blocks\' %dx%d with %d levels (a 3x3 block is one embark space)\n",x_max,y_max,z_max );
+    out.print ( "DF Map size in squares %d, %d, %d\n",x_max*SQUARESPERBLOCK,y_max*SQUARESPERBLOCK,z_max );
 
 
     //level area limit
@@ -2504,7 +2502,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     if ( xoffset>x_max || yoffset>y_max )
     {
-        DFConsole->printerr ( "Invalid level size.\n" );
+        out.printerr ( "Invalid level size.\n" );
         return 21;
     }
 
@@ -2668,27 +2666,27 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
     if ( z_max>limitlevels )
     {
-        DFConsole->print ( "DF Map size cut down to %d, %d, %d squares\n",dfxsquares,dfysquares, dfzsquares );
+        out.print ( "DF Map size cut down to %d, %d, %d squares\n",dfxsquares,dfysquares, dfzsquares );
     }
     if ( mczsquares<128 ) mczsquares = 128;//this should be the case (<128) most of the time
-    DFConsole->print ( "MC Map size will be %d, %d, %d squares\n",mcxsquares,mcysquares, mczsquares );
-    DFConsole->print ( "plus surrounding random terrain using seed: %I64d\n",seed );
+    out.print ( "MC Map size will be %d, %d, %d squares\n",mcxsquares,mcysquares, mczsquares );
+    out.print ( "plus surrounding random terrain using seed: %I64d\n",seed );
 
     if ( mcxsquares<0 || mcysquares<0 || mczsquares<0 )
     {
-        DFConsole->printerr ( "Area too small\n" );
+        out.printerr ( "Area too small\n" );
         return 20;
     }
 
     // get region geology
     if ( !Maps::ReadGeology ( layerassign ) )
     {
-        DFConsole->printerr ("Can't get region geology.\n");
+        out.printerr ("Can't get region geology.\n");
         return 106;
     }
 
 
-    DFConsole->print ( "\nReading Plants... " );
+    out.print ( "\nReading Plants... " );
     uint32_t numVegs = Vegetation::getCount();
 
     //read vegetation into a map for faster access later
@@ -2698,15 +2696,14 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         df::plant * p = Vegetation::getPlant(i);
         vegs[getMapIndex ( p->pos.x,p->pos.y,p->pos.z ) ] = df::global::world->raws.plants.all[p->material]->id;
     }
-    DFConsole->print ( "%d\n",vegs.size() );
+    out.print ( "%d\n",vegs.size() );
 
 
     
     //read buildings into a map organized by location (10 bit each for x,y,z packed into an int)
-    DFConsole->print ( "Reading Buildings... " );
+    out.print ( "Reading Buildings... " );
     map <uint32_t, string> custom_workshop_types;
     uint32_t numBuildings = 0;
-    DFHack::VersionInfo * mem = DF->vinfo;
     //DFHack::Position * Pos = DF->getPosition();
 
     map<uint32_t,myBuilding> Buildings;
@@ -2826,7 +2823,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
 
     //Constructions
-    DFConsole->print ( "Reading Constructions... " );
+    out.print ( "Reading Constructions... " );
     uint32_t numConstr = Constructions::getCount();
     map<uint32_t,myConstruction> Constructions;
     myConstruction *consmats = new myConstruction[numConstr];
@@ -2842,7 +2839,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         uint32_t index = getMapIndex ( con->pos.x,con->pos.y,con->pos.z );
         Constructions[index] = consmats[i];
     }
-    DFConsole->print ( "%d\n",Constructions.size() );
+    out.print ( "%d\n",Constructions.size() );
 
 
 
@@ -2853,7 +2850,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     uint8_t* mcblocklight = new uint8_t[mcxsquares*mcysquares*mczsquares];
     if ( mclayers==NULL || mcdata == NULL || mcskylight == NULL || mcblocklight == NULL )
     {
-        DFConsole->printerr ( "Unable to allocate memory to store level data, exiting." );
+        out.printerr ( "Unable to allocate memory to store level data, exiting." );
         return 10;
     }
     memset ( mclayers,0,sizeof ( uint8_t ) * ( mcxsquares*mcysquares*mczsquares ) );
@@ -2864,7 +2861,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
 
     //read DF map data and create MC map blocks and data arrays;
-    DFConsole->print ( "\nConverting Map...\n" );
+    out.print ( "\nConverting Map...\n" );
 
     // walk the DF map!
     uint32_t zcount = 0;
@@ -2872,7 +2869,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
     {
         if ( limitz[zzz]==0 )
             continue;
-        DFConsole->print ( "Layer %d/%d\t(%d/%d)\n",zzz,z_max,zcount,limitlevels );
+        out.print ( "Layer %d/%d\t(%d/%d)\n",zzz,z_max,zcount,limitlevels );
         for ( uint32_t dfblockx = xoffset; dfblockx< x_max;dfblockx++ )
         {
             for ( uint32_t dfblocky = yoffset; dfblocky< y_max;dfblocky++ )
@@ -2881,7 +2878,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
                 if ( Maps::getBlock ( dfblockx,dfblocky,zzz ) )
                 {
 
-                    convertDFBlock ( Mats, layerassign, Constructions, Buildings, vegs,
+                    convertDFBlock ( out, layerassign, Constructions, Buildings, vegs,
                                      uio, mclayers,mcdata,
                                      dfblockx, dfblocky, zzz, zcount, xoffset, yoffset, mcxsquares, mcysquares );
 
@@ -2896,22 +2893,22 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
             switch ( i )
             {
             case MATERIALS:
-                DFConsole->print ( " MATERIALS:\t" );
+                out.print ( " MATERIALS:\t" );
                 break;
             case TERRAIN:
-                DFConsole->print ( " TERRAIN:  \t" );
+                out.print ( " TERRAIN:  \t" );
                 break;
             case FLOWS:
-                DFConsole->print ( " FLOWS:    \t" );
+                out.print ( " FLOWS:    \t" );
                 break;
             case PLANTS:
-                DFConsole->print ( " PLANTS:   \t" );
+                out.print ( " PLANTS:   \t" );
                 break;
             case BUILDINGS:
-                DFConsole->print ( " BUILDINGS:\t" );
+                out.print ( " BUILDINGS:\t" );
                 break;
             }
-            DFConsole->print ( "unknown: %d  imperfect: %d  perfect: %d  new: %d\n",stats[i][UNKNOWN],stats[i][IMPERFECT],stats[i][PERFECT],stats[i][UNSEEN] );
+            out.print ( "unknown: %d  imperfect: %d  perfect: %d  new: %d\n",stats[i][UNKNOWN],stats[i][IMPERFECT],stats[i][PERFECT],stats[i][UNSEEN] );
         }
 
         zcount++;
@@ -2941,7 +2938,7 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
 
 
     //place the spawn at DF cursor location, if within output area and not a wall
-    DFConsole->print ( "\nPlancing spawn location\n" );
+    out.print ( "\nPlancing spawn location\n" );
     int32_t cx, cy, cz,ocx,ocy,ocz;
     Gui::getCursorCoords ( ocx,ocy,ocz );
     cx=ocx;
@@ -2984,26 +2981,26 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
                 }
                 if ( !ok )
                 {
-                    DFConsole->print ( "DF Cursor not at location with enough space for spawn\nSetting spawn to top center of area\n" );
+                    out.print ( "DF Cursor not at location with enough space for spawn\nSetting spawn to top center of area\n" );
                     cx = -1;//never found a valid location - place in center
                 }
             }
             else
             {
-                DFConsole->print ( "DF Cursor outside of area output on this level\nSetting spawn to top center of area\n" );
+                out.print ( "DF Cursor outside of area output on this level\nSetting spawn to top center of area\n" );
                 cx=-1;
             }
         }
         else
         {
-            DFConsole->print ( "DF Cursor on level not being output\nSetting spawn to top center of area\n" );
+            out.print ( "DF Cursor on level not being output\nSetting spawn to top center of area\n" );
             cx=-1;
         }
     }
     if ( cx==30000 || cx<0 )
     {
         //need to set spawn to center of map;
-        DFConsole->print ( "Putting spawn at center of map...\n" );
+        out.print ( "Putting spawn at center of map...\n" );
         cx = mcxsquares/2;
         cy = mcysquares/2;
         cz = mczsquares;
@@ -3033,12 +3030,12 @@ int convertMaps ( DFHack::Core *DF,DFHack::Materials * Mats )
         }
 
     }
-    DFConsole->print ( "Putting spawn at %d,%d,%d in Minecraft\nwhich is at %d,%d,%d in Dwarf Fortress\n",cx,cy,cz,ocx,ocy,ocz );
+    out.print ( "Putting spawn at %d,%d,%d in Minecraft\nwhich is at %d,%d,%d in Dwarf Fortress\n",cx,cy,cz,ocx,ocy,ocz );
 
-    calcLighting ( mclayers,mcskylight,mcblocklight, mcxsquares, mcysquares, mczsquares );
+    calcLighting ( out, mclayers,mcskylight,mcblocklight, mcxsquares, mcysquares, mczsquares );
 
     //save the level!
-    return saveMCLevelAlpha ( mclayers, mcdata, mcskylight, mcblocklight, mcxsquares, mcysquares, mczsquares,cx,cy,cz,NULL );
+    return saveMCLevelAlpha ( out, mclayers, mcdata, mcskylight, mcblocklight, mcxsquares, mcysquares, mczsquares,cx,cy,cz,NULL );
 }
 
 /*
@@ -3106,36 +3103,27 @@ cin.ignore();
 
 DFHACK_PLUGIN("df2minecraft");
 
-DFhackCExport command_result mc_export (Core * c, vector <string> & parameters);
+DFhackCExport command_result mc_export (DFHack::color_ostream & c, vector <string> & parameters);
 
-DFhackCExport command_result plugin_init ( Core * c, std::vector <PluginCommand> &commands)
+DFhackCExport command_result plugin_init (DFHack::color_ostream & c, std::vector <PluginCommand> &commands)
 {
     commands.push_back(PluginCommand("df2minecraft", "Print the weather map or change weather.",mc_export));
     return CR_OK;
 }
 
-DFhackCExport command_result plugin_shutdown ( Core * c )
+DFhackCExport command_result plugin_shutdown ( DFHack::color_ostream & c )
 {
     return CR_OK;
 }
 
-DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
+DFhackCExport command_result mc_export (DFHack::color_ostream & c, vector <string> & parameters)
 {
-    DFConsole = &(c->con);
-    // first, check if the user is OK with running this...
-    std::string question_out;
-    CommandHistory ch;
-    DFConsole->printerr("This is experimental/broken/crazy. You are running it at your own risk.\n");
-    DFConsole->lineedit("Are you sure? Type in 'yes' if you are: ",question_out,ch);
-    if(question_out != "yes")
-        return CR_OK;
-
     //load settings xml
     TiXmlDocument doc ( "hack/df2mc.xml" );
     bool loadOkay = doc.LoadFile();
     if ( !loadOkay )
     {
-        DFConsole->printerr ( "Could not load hack/df2mc.xml\n" );
+        c.printerr ( "Could not load hack/df2mc.xml\n" );
         return CR_FAILURE;
     }
 
@@ -3143,7 +3131,7 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
     settings = doc.FirstChildElement ( "settings" );
     if ( settings==NULL )
     {
-        DFConsole->printerr ( "Could not load settings from hack/df2mc.xml (corrupt xml file?)\n" );
+        c.printerr ( "Could not load settings from hack/df2mc.xml (corrupt xml file?)\n" );
         return CR_FAILURE;
     }
     squaresize=3;
@@ -3156,7 +3144,7 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
     const char* res = settings->FirstChildElement ( "squaresize" )->Attribute ( "val",&squaresize );
     if ( res==NULL || squaresize<1 || squaresize>10 )
     {
-        DFConsole->printerr ( "Invalid square size setting\n" );
+        c.printerr ( "Invalid square size setting\n" );
         return CR_FAILURE;
     }
 
@@ -3294,7 +3282,7 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
     //load MC material mappings
     mcMats.clear();
     //  dfMat2mcMat.clear();
-    loadMcMats ( &doc );
+    loadMcMats ( &doc, c );
 
 
     //load objects
@@ -3339,13 +3327,10 @@ DFhackCExport command_result mc_export (Core * c, vector <string> & parameters)
         xmlbuildings->LinkEndChild ( comment );
     }
 
-    loadDFObjects();
-
-    DFHack::Materials * Mats = c->getMaterials();
-    Mats->ReadAllMaterials();
+    loadDFObjects(c);
 
     //convert the map
-    int result = convertMaps ( c,Mats );
+    int result = convertMaps ( c );
 
     doc.SaveFile ( "hack/updated.xml" );
 
