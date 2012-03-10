@@ -8,23 +8,6 @@ SET(PROJECT_SRCS
     source/df2minecraft.cpp
 )
 
-if(WIN32)
-    include_directories(
-        ${dfhack_SOURCE_DIR}/library/depends/zlib/
-        ${dfhack_SOURCE_DIR}/library/depends/tinyxml/
-        ${CMAKE_SOURCE_DIR}
-    )
-    LINK_DIRECTORIES (
-        ${LINK_DIRECTORIES}
-        ${dfhack_SOURCE_DIR}/library/depends/zlib/
-    )
-    DFHACK_PLUGIN(df2minecraft ${PROJECT_SRCS} LINK_LIBRARIES zlib.lib)
-else()
-    include_directories(
-        ${dfhack_SOURCE_DIR}/library/depends/tinyxml/
-        ${CMAKE_SOURCE_DIR}
-    )
-    DFHACK_PLUGIN(df2minecraft ${PROJECT_SRCS} LINK_LIBRARIES z)
-endif()
+DFHACK_PLUGIN(df2minecraft ${PROJECT_SRCS} LINK_LIBRARIES ${ZLIB_LIBRARIES})
 
 INSTALL(FILES df2mc.xml DESTINATION ${DFHACK_DATA_DESTINATION})
