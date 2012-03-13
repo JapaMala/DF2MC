@@ -47,7 +47,7 @@ http://github.com/TroZ/DF2MC
 #include "Export.h"
 #include "PluginManager.h"
 #include <TileTypes.h>
-#include <tinyxml/tinyxml.h>
+#include <tinyxml.h>
 
 #include <zlib.h>
 #include <modules/Maps.h>
